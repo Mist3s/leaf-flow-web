@@ -93,7 +93,7 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
               >
                 <img src={product.image} alt={product.name} loading="lazy" />
                 <h3 className="product-card__title">{product.name}</h3>
-                <p className="muted" style={{ textAlign: 'center' }}>
+                <p className="muted product-card__category">
                   {product.category}
                 </p>
                 <div className="row justify-between product-card__footer">

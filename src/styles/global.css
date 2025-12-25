@@ -234,6 +234,10 @@ a {
   text-overflow: ellipsis;
 }
 
+.product-card__category {
+  text-align: left;
+}
+
 .product-card__footer {
   margin-top: auto;
   align-items: center;
