@@ -14,7 +14,7 @@ import {
   Minus,
   ArrowLeft,
   ShieldCheck,
-} from 'https://esm.sh/lucide-react@0.469.0';
+} from 'https://esm.sh/lucide-react@0.469.0?dev&deps=react@18.3.1';
 import {
   listCategories,
   listProducts,
