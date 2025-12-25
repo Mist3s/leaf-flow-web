@@ -64,17 +64,6 @@ const App: React.FC = () => {
           filters={filters}
           onFiltersChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
           onNavigate={navigate}
-          onAdd={(product, variant) =>
-            addToCart({
-              productId: product.id,
-              variantId: variant.id,
-              quantity: 1,
-              price: variant.price,
-              productName: product.name,
-              variantLabel: variant.weight,
-            })
-          }
-          user={auth.user}
         />
       )}
 
