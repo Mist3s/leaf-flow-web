@@ -30,7 +30,6 @@ async function request(path, options = {}, { skipAuthRetry = false } = {}) {
       ...(authTokens?.accessToken ? { Authorization: `Bearer ${authTokens.accessToken}` } : {}),
       ...(options.headers || {}),
     },
-    credentials: 'include',
   });
 
   if (res.status === 401 && authTokens?.refreshToken && !skipAuthRetry) {

@@ -31,18 +31,18 @@ function navigate(path) {
 function matchRoute() {
   const path = location.hash.replace(/^#/, '') || '/';
   const matchers = [
-    { name: 'home', pattern: /^\/$/, params: {} },
+    { name: 'home', pattern: /^\/$/, params: [] },
     { name: 'product', pattern: /^\/product\/([^/]+)$/, params: ['id'] },
-    { name: 'cart', pattern: /^\/cart$/, params: {} },
-    { name: 'checkout', pattern: /^\/checkout$/, params: {} },
-    { name: 'auth', pattern: /^\/auth$/, params: {} },
+    { name: 'cart', pattern: /^\/cart$/, params: [] },
+    { name: 'checkout', pattern: /^\/checkout$/, params: [] },
+    { name: 'auth', pattern: /^\/auth$/, params: [] },
   ];
 
   for (const m of matchers) {
     const res = path.match(m.pattern);
     if (res) {
       const params = {};
-      if (m.params) {
+      if (Array.isArray(m.params)) {
         m.params.forEach((key, index) => {
           params[key] = res[index + 1];
         });
