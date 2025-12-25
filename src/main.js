@@ -663,7 +663,7 @@ function App() {
     if (route.name === 'home') setOrderSummary(null);
   }, [route.name]);
 
-  return html`<main class="section" style=${{ paddingTop: 0 }}>
+  return html`<main class="page">
     <${Header}
       theme=${theme}
       toggleTheme=${toggleTheme}
