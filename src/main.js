@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'https://esm.sh/react@18.3.1';
 import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
+import htm from 'https://esm.sh/htm@3.1.1?dev';
 import {
   ShoppingBag,
   Moon,
@@ -14,7 +15,6 @@ import {
   ArrowLeft,
   ShieldCheck,
 } from 'https://esm.sh/lucide-react@0.469.0';
-
 import {
   listCategories,
   listProducts,
@@ -31,9 +31,8 @@ import {
 } from './api.js';
 import { formatCurrency, priceRange } from './utils/format.js';
 
+const html = htm.bind(React.createElement);
 const THEME_KEY = 'zavarka-theme';
-
-const RouteContext = React.createContext({ path: '/', params: {}, navigate: () => {} });
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
@@ -47,8 +46,7 @@ function useTheme() {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  return [theme, toggleTheme];
+  return [theme, () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))];
 }
 
 function parseRoute() {
@@ -60,14 +58,11 @@ function parseRoute() {
     { name: 'checkout', pattern: /^\/checkout$/, keys: [] },
     { name: 'auth', pattern: /^\/auth$/, keys: [] },
   ];
-
   for (const r of routes) {
-    const match = path.match(r.pattern);
-    if (match) {
+    const m = path.match(r.pattern);
+    if (m) {
       const params = {};
-      r.keys.forEach((key, index) => {
-        params[key] = match[index + 1];
-      });
+      r.keys.forEach((key, i) => (params[key] = m[i + 1]));
       return { name: r.name, params };
     }
   }
@@ -76,7 +71,6 @@ function parseRoute() {
 
 function useRoute() {
   const [route, setRoute] = useState(parseRoute);
-
   useEffect(() => {
     const handler = () => setRoute(parseRoute());
     window.addEventListener('hashchange', handler);
@@ -91,7 +85,6 @@ function useRoute() {
       location.hash = normalized;
     }
   };
-
   return [route, navigate];
 }
 
@@ -102,25 +95,20 @@ function computeCart(items) {
 }
 
 function useAuth() {
-  const [auth, setAuth] = useState({
-    user: null,
-    tokens: null,
-    loading: false,
-    error: null,
-  });
+  const [auth, setAuth] = useState({ user: null, tokens: null, loading: false, error: null });
 
   useEffect(() => {
     const stored = getStoredTokens();
     if (!stored) return;
     setAuthTokens(stored);
-    setAuth((prev) => ({ ...prev, tokens: stored }));
+    setAuth((p) => ({ ...p, tokens: stored }));
     (async () => {
       try {
-        setAuth((prev) => ({ ...prev, loading: true }));
+        setAuth((p) => ({ ...p, loading: true }));
         const user = await profile();
-        setAuth((prev) => ({ ...prev, user, loading: false }));
-      } catch (error) {
-        console.warn('Не удалось загрузить профиль', error);
+        setAuth((p) => ({ ...p, user, loading: false }));
+      } catch (err) {
+        console.warn('Не удалось загрузить профиль', err);
         setAuthTokens(null);
         setAuth({ user: null, tokens: null, loading: false, error: 'Сессия истекла' });
       }
@@ -128,14 +116,14 @@ function useAuth() {
   }, []);
 
   const doLogin = async (payload) => {
-    setAuth((prev) => ({ ...prev, loading: true, error: null }));
+    setAuth((p) => ({ ...p, loading: true, error: null }));
     const res = await login(payload);
     setAuthTokens(res.tokens);
     setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
   };
 
   const doRegister = async (payload) => {
-    setAuth((prev) => ({ ...prev, loading: true, error: null }));
+    setAuth((p) => ({ ...p, loading: true, error: null }));
     const res = await register(payload);
     setAuthTokens(res.tokens);
     setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
@@ -159,22 +147,15 @@ function useCart(auth) {
     }
     let cancelled = false;
     (async () => {
-      setCart((prev) => ({ ...prev, loading: true, error: null }));
+      setCart((p) => ({ ...p, loading: true, error: null }));
       try {
         const remote = await getCart();
         if (!cancelled) {
-          const calculated = computeCart(
-            (remote?.items || []).map((item) => ({
-              ...item,
-              quantity: item.quantity ?? 1,
-            })),
-          );
-          setCart({ ...calculated, error: null, loading: false });
+          const calculated = computeCart((remote?.items || []).map((i) => ({ ...i, quantity: i.quantity ?? 1 })));
+          setCart({ ...calculated, loading: false, error: null });
         }
-      } catch (error) {
-        if (!cancelled) {
-          setCart((prev) => ({ ...prev, loading: false, error: 'Не удалось загрузить корзину' }));
-        }
+      } catch (err) {
+        if (!cancelled) setCart((p) => ({ ...p, loading: false, error: 'Не удалось загрузить корзину' }));
       }
     })();
     return () => {
@@ -185,57 +166,41 @@ function useCart(auth) {
   const sync = async (items) => {
     if (!auth.tokens) return;
     try {
-      await replaceCartItems(
-        items.map((i) => ({
-          productId: i.productId,
-          variantId: i.variantId,
-          quantity: i.quantity,
-        })),
-      );
-      setCart((prev) => ({ ...prev, error: null }));
-    } catch (error) {
-      setCart((prev) => ({ ...prev, error: 'Не удалось синхронизировать корзину' }));
+      await replaceCartItems(items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })));
+      setCart((p) => ({ ...p, error: null }));
+    } catch (err) {
+      setCart((p) => ({ ...p, error: 'Не удалось синхронизировать корзину' }));
     }
-  };
-
-  const updateItems = (items) => {
-    const calculated = computeCart(items);
-    setCart((prev) => ({ ...prev, ...calculated }));
-    sync(items);
   };
 
   const addItem = (product, variant, quantity = 1) => {
     setCart((prev) => {
       const existing = prev.items.find((i) => i.productId === product.id && i.variantId === variant.id);
-      let items;
-      if (existing) {
-        items = prev.items.map((i) =>
-          i.productId === product.id && i.variantId === variant.id ? { ...i, quantity: i.quantity + quantity } : i,
-        );
-      } else {
-        items = [
-          ...prev.items,
-          {
-            productId: product.id,
-            variantId: variant.id,
-            quantity,
-            price: variant.price,
-            productName: product.name,
-            variantLabel: variant.weight,
-          },
-        ];
-      }
-      const calculated = computeCart(items);
+      const items = existing
+        ? prev.items.map((i) =>
+            i.productId === product.id && i.variantId === variant.id ? { ...i, quantity: i.quantity + quantity } : i,
+          )
+        : [
+            ...prev.items,
+            {
+              productId: product.id,
+              variantId: variant.id,
+              quantity,
+              price: variant.price,
+              productName: product.name,
+              variantLabel: variant.weight,
+            },
+          ];
       sync(items);
-      return { ...prev, ...calculated };
+      return { ...prev, ...computeCart(items) };
     });
   };
 
   const changeQuantity = (productId, variantId, quantity) => {
     setCart((prev) => {
       const items = prev.items
-        .map((item) => (item.productId === productId && item.variantId === variantId ? { ...item, quantity } : item))
-        .filter((item) => item.quantity > 0);
+        .map((i) => (i.productId === productId && i.variantId === variantId ? { ...i, quantity } : i))
+        .filter((i) => i.quantity > 0);
       sync(items);
       return { ...prev, ...computeCart(items) };
     });
@@ -243,57 +208,38 @@ function useCart(auth) {
 
   const removeItem = (productId, variantId) => {
     setCart((prev) => {
-      const items = prev.items.filter((item) => !(item.productId === productId && item.variantId === variantId));
+      const items = prev.items.filter((i) => !(i.productId === productId && i.variantId === variantId));
       sync(items);
       return { ...prev, ...computeCart(items) };
     });
   };
 
   const reset = () => setCart({ items: [], totalPrice: '0.00', totalCount: 0, error: null, loading: false });
-
   return { cart, addItem, changeQuantity, removeItem, reset };
 }
 
-function Header({ theme, toggleTheme, cartCount, user, onNavigate, onLogout }) {
-  return (
-    <header className="nav">
-      <a className="brand" href="#/" onClick={() => onNavigate('/')}>
-        <span className="brand-badge">
-          <CupSoda size={22} />
-        </span>
-        Zavarka39
-      </a>
-      <div className="nav-actions">
-        <button className="pill" onClick={toggleTheme}>
-          {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-          {theme === 'dark' ? 'Тёмная' : 'Светлая'}
-        </button>
-        {user ? (
-          <>
-            <span className="nav-user">
-              <UserRound size={16} />
-              {user.firstName || 'Профиль'}
-            </span>
-            <button className="pill" onClick={onLogout}>
-              <LogOut size={16} />
-              Выйти
-            </button>
-          </>
-        ) : (
-          <button className="pill" onClick={() => onNavigate('/auth')}>
-            <LogIn size={16} />
-            Войти
-          </button>
-        )}
-        <button className="pill" onClick={() => onNavigate('/cart')}>
-          <ShoppingBag size={16} />
-          Корзина
-          <span className="badge">{cartCount}</span>
-        </button>
-      </div>
-    </header>
-  );
-}
+const Header = ({ theme, toggleTheme, cartCount, user, onNavigate, onLogout }) =>
+  html`<header class="nav">
+    <a class="brand" href="#/" onClick=${(e) => { e.preventDefault(); onNavigate('/'); }}>
+      <span class="brand-badge">${html`<${CupSoda} size=${22} />`}</span>
+      Zavarka39
+    </a>
+    <div class="nav-actions">
+      <button class="pill" onClick=${toggleTheme}>
+        ${theme === 'dark' ? html`<${Moon} size=${16} />` : html`<${Sun} size=${16} />`}
+        ${theme === 'dark' ? 'Тёмная' : 'Светлая'}
+      </button>
+      ${user
+        ? html`<span class="nav-user"><${UserRound} size=${16} />${user.firstName || 'Профиль'}</span>
+            <button class="pill" onClick=${onLogout}><${LogOut} size=${16} />Выйти</button>`
+        : html`<button class="pill" onClick=${() => onNavigate('/auth')}><${LogIn} size=${16} />Войти</button>`}
+      <button class="pill" onClick=${() => onNavigate('/cart')}>
+        <${ShoppingBag} size=${16} />
+        Корзина
+        <span class="badge">${cartCount}</span>
+      </button>
+    </div>
+  </header>`;
 
 function Home({ filters, onFiltersChange, onNavigate, onAdd, user }) {
   const [products, setProducts] = useState([]);
@@ -308,11 +254,7 @@ function Home({ filters, onFiltersChange, onNavigate, onAdd, user }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    listProducts({
-      search: filters.search || undefined,
-      category: filters.category || undefined,
-      limit: 60,
-    })
+    listProducts({ search: filters.search || undefined, category: filters.category || undefined, limit: 60 })
       .then((res) => {
         setProducts(res.items || []);
         setLoading(false);
@@ -323,89 +265,80 @@ function Home({ filters, onFiltersChange, onNavigate, onAdd, user }) {
       });
   }, [filters.search, filters.category]);
 
-  return (
-    <div className="stack">
-      <section className="hero">
-        <h1>Каталог китайского чая</h1>
-        <p>Поиск работает по названию и тегам.</p>
-        <div className="row" style={{ gap: '0.5rem' }}>
-          <Search size={18} />
-          <input
-            className="input"
-            type="search"
-            placeholder="Поиск по каталогу"
-            value={filters.search}
-            onChange={(e) => onFiltersChange({ search: e.target.value })}
-          />
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="row" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
-          <button className={`pill ${!filters.category ? 'active' : ''}`} onClick={() => onFiltersChange({ category: '' })}>
-            Все
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              className={`pill ${filters.category === cat.id ? 'active' : ''}`}
-              onClick={() => onFiltersChange({ category: cat.id })}
+  return html`<div class="stack">
+    <section class="hero">
+      <h1>Каталог китайского чая</h1>
+      <p>Поиск работает по названию и тегам.</p>
+      <div class="row" style=${{ gap: '0.5rem' }}>
+        <${Search} size=${18} />
+        <input
+          class="input"
+          type="search"
+          placeholder="Поиск по каталогу"
+          value=${filters.search}
+          onInput=${(e) => onFiltersChange({ search: e.target.value })}
+        />
+      </div>
+    </section>
+    <section class="section">
+      <div class="row" style=${{ flexWrap: 'wrap', gap: '0.5rem' }}>
+        <button class=${`pill ${!filters.category ? 'active' : ''}`} onClick=${() => onFiltersChange({ category: '' })}>Все</button>
+        ${categories.map(
+          (cat) =>
+            html`<button
+              key=${cat.id}
+              class=${`pill ${filters.category === cat.id ? 'active' : ''}`}
+              onClick=${() => onFiltersChange({ category: cat.id })}
             >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="row justify-between" style={{ marginBottom: '0.5rem' }}>
-          <h2 style={{ margin: 0 }}>Товары</h2>
-          <span className="muted">{products.length ? `${products.length} позиций` : ''}</span>
-        </div>
-        {loading && <p className="muted">Загружаем подборку...</p>}
-        {error && <div className="alert danger">{error}</div>}
-        {!loading && !products.length && <p className="muted">Товары не найдены.</p>}
-        <div className="grid">
-          {products.map((product) => (
-            <article key={product.id} className="card">
-              <img src={product.image} alt={product.name} loading="lazy" />
-              <div className="row justify-between">
-                <h3 style={{ margin: 0 }}>{product.name}</h3>
-                <span className="badge">{product.category}</span>
+              ${cat.label}
+            </button>`,
+        )}
+      </div>
+    </section>
+    <section class="section">
+      <div class="row justify-between" style=${{ marginBottom: '0.5rem' }}>
+        <h2 style=${{ margin: 0 }}>Товары</h2>
+        <span class="muted">${products.length ? `${products.length} позиций` : ''}</span>
+      </div>
+      ${loading && html`<p class="muted">Загружаем подборку...</p>`}
+      ${error && html`<div class="alert danger">${error}</div>`}
+      ${!loading && !products.length && html`<p class="muted">Товары не найдены.</p>`}
+      <div class="grid">
+        ${products.map(
+          (product) => html`<article key=${product.id} class="card">
+            <img src=${product.image} alt=${product.name} loading="lazy" />
+            <div class="row justify-between">
+              <h3 style=${{ margin: 0 }}>${product.name}</h3>
+              <span class="badge">${product.category}</span>
+            </div>
+            <p class="muted" style=${{ minHeight: '48px' }}>${product.description.slice(0, 90)}...</p>
+            <div class="row justify-between">
+              <div class="stack" style=${{ gap: '0.15rem' }}>
+                <strong>${priceRange(product.variants)}</strong>
+                <span class="muted">от ${product.variants?.[0]?.weight}</span>
               </div>
-              <p className="muted" style={{ minHeight: '48px' }}>
-                {product.description.slice(0, 90)}...
-              </p>
-              <div className="row justify-between">
-                <div className="stack" style={{ gap: '0.15rem' }}>
-                  <strong>{priceRange(product.variants)}</strong>
-                  <span className="muted">от {product.variants?.[0]?.weight}</span>
-                </div>
-                <div className="row">
-                  <button className="button ghost" onClick={() => onNavigate(`/product/${product.id}`)}>
-                    Открыть
-                  </button>
-                  <button
-                    className="button"
-                    onClick={() => {
-                      if (!user) {
-                        onNavigate('/auth');
-                        return;
-                      }
-                      const variant = product.variants?.[0];
-                      if (variant) onAdd(product, variant, 1);
-                    }}
-                  >
-                    В корзину
-                  </button>
-                </div>
+              <div class="row">
+                <button class="button ghost" onClick=${() => onNavigate(`/product/${product.id}`)}>Открыть</button>
+                <button
+                  class="button"
+                  onClick=${() => {
+                    if (!user) {
+                      onNavigate('/auth');
+                      return;
+                    }
+                    const variant = product.variants?.[0];
+                    if (variant) onAdd(product, variant, 1);
+                  }}
+                >
+                  В корзину
+                </button>
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
+            </div>
+          </article>`,
+        )}
+      </div>
+    </section>
+  </div>`;
 }
 
 function ProductPage({ id, onNavigate, onAdd, user }) {
@@ -424,215 +357,159 @@ function ProductPage({ id, onNavigate, onAdd, user }) {
       .catch(() => setError('Не удалось загрузить товар'));
   }, [id]);
 
-  if (error) return <div className="alert danger">{error}</div>;
-  if (!product) return <p className="muted">Загружаем описание...</p>;
+  if (error) return html`<div class="alert danger">${error}</div>`;
+  if (!product) return html`<p class="muted">Загружаем описание...</p>`;
 
-  return (
-    <div className="stack">
-      <div className="row" style={{ marginBottom: '0.75rem' }}>
-        <button className="pill" onClick={() => onNavigate('/')}>
-          <ArrowLeft size={16} /> Назад
-        </button>
-      </div>
-      <section className="product-header">
-        <div className="product-visual">
-          <img src={product.image} alt={product.name} />
-        </div>
-        <div className="stack">
-          <div className="row" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
-            {product.tags.map((tag) => (
-              <span key={tag} className="badge">
-                #{tag}
-              </span>
-            ))}
-          </div>
-          <h1 style={{ margin: 0 }}>{product.name}</h1>
-          <p className="muted">{product.description}</p>
-          <div className="stack">
-            <span className="muted">Выберите фасовку</span>
-            <div className="variant-list">
-              {product.variants.map((variant) => (
-                <button
-                  key={variant.id}
-                  className={`variant ${variant.id === activeVariant?.id ? 'active' : ''}`}
-                  onClick={() => setActiveVariant(variant)}
-                >
-                  <strong>{variant.weight}</strong>
-                  <span className="muted">{formatCurrency(variant.price)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="row justify-between" style={{ alignItems: 'flex-end' }}>
-            <div className="stack" style={{ gap: '0.15rem' }}>
-              <span className="muted">Стоимость</span>
-              <h2 style={{ margin: 0 }}>{formatCurrency(activeVariant?.price)}</h2>
-            </div>
-            <div className="row">
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                className="input"
-                style={{ width: '90px' }}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-              />
-              <button
-                className="button"
-                onClick={() => {
-                  if (!user) {
-                    onNavigate('/auth');
-                    return;
-                  }
-                  if (activeVariant) onAdd(product, activeVariant, quantity);
-                }}
-              >
-                В корзину
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+  return html`<div class="stack">
+    <div class="row" style=${{ marginBottom: '0.75rem' }}>
+      <button class="pill" onClick=${() => onNavigate('/')}>
+        <${ArrowLeft} size=${16} /> Назад
+      </button>
     </div>
-  );
+    <section class="product-header">
+      <div class="product-visual"><img src=${product.image} alt=${product.name} /></div>
+      <div class="stack">
+        <div class="row" style=${{ gap: '0.5rem', flexWrap: 'wrap' }}>
+          ${product.tags.map((tag) => html`<span key=${tag} class="badge">#${tag}</span>`)}
+        </div>
+        <h1 style=${{ margin: 0 }}>${product.name}</h1>
+        <p class="muted">${product.description}</p>
+        <div class="stack">
+          <span class="muted">Выберите фасовку</span>
+          <div class="variant-list">
+            ${product.variants.map(
+              (variant) => html`<button
+                key=${variant.id}
+                class=${`variant ${variant.id === activeVariant?.id ? 'active' : ''}`}
+                onClick=${() => setActiveVariant(variant)}
+              >
+                <strong>${variant.weight}</strong>
+                <span class="muted">${formatCurrency(variant.price)}</span>
+              </button>`,
+            )}
+          </div>
+        </div>
+        <div class="row justify-between" style=${{ alignItems: 'flex-end' }}>
+          <div class="stack" style=${{ gap: '0.15rem' }}>
+            <span class="muted">Стоимость</span>
+            <h2 style=${{ margin: 0 }}>${formatCurrency(activeVariant?.price)}</h2>
+          </div>
+          <div class="row">
+            <input
+              type="number"
+              min="1"
+              value=${quantity}
+              class="input"
+              style=${{ width: '90px' }}
+              onInput=${(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+            />
+            <button
+              class="button"
+              onClick=${() => {
+                if (!user) {
+                  onNavigate('/auth');
+                  return;
+                }
+                if (activeVariant) onAdd(product, activeVariant, quantity);
+              }}
+            >
+              В корзину
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>`;
 }
 
 function CartPage({ cart, onNavigate, onChangeQty, onRemove, user }) {
-  if (!user) {
-    return (
-      <div className="surface stack" style={{ alignItems: 'flex-start' }}>
-        <h2 style={{ margin: 0 }}>Только для авторизованных</h2>
-        <p className="muted">Войдите, чтобы оформить заказ и увидеть корзину.</p>
-        <button className="button" onClick={() => onNavigate('/auth')}>
-          Перейти к входу
-        </button>
-      </div>
-    );
-  }
+  if (!user)
+    return html`<div class="surface stack" style=${{ alignItems: 'flex-start' }}>
+      <h2 style=${{ margin: 0 }}>Только для авторизованных</h2>
+      <p class="muted">Войдите, чтобы оформить заказ и увидеть корзину.</p>
+      <button class="button" onClick=${() => onNavigate('/auth')}>Перейти к входу</button>
+    </div>`;
+  if (!cart.items.length)
+    return html`<div class="surface stack" style=${{ alignItems: 'flex-start' }}>
+      <h2 style=${{ margin: 0 }}>Корзина пуста</h2>
+      <p class="muted">Добавьте чай в каталоге.</p>
+      <button class="button" onClick=${() => onNavigate('/')}>К каталогу</button>
+    </div>`;
 
-  if (!cart.items.length) {
-    return (
-      <div className="surface stack" style={{ alignItems: 'flex-start' }}>
-        <h2 style={{ margin: 0 }}>Корзина пуста</h2>
-        <p className="muted">Добавьте чай в каталоге.</p>
-        <button className="button" onClick={() => onNavigate('/')}>
-          К каталогу
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="stack">
-      <div className="row justify-between">
-        <h2 style={{ margin: 0 }}>Корзина</h2>
-        <span className="muted">{cart.items.length} позиций</span>
-      </div>
-      {cart.error && <div className="alert danger">{cart.error}</div>}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Товар</th>
-            <th>Цена</th>
-            <th>Кол-во</th>
-            <th>Сумма</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {cart.items.map((item) => (
-            <tr key={`${item.productId}:${item.variantId}`}>
-              <td>
-                <div className="stack">
-                  <strong>{item.productName}</strong>
-                  <span className="muted">{item.variantLabel}</span>
-                </div>
-              </td>
-              <td>{formatCurrency(item.price)}</td>
-              <td>
-                <div className="row">
-                  <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}>
-                    <Minus size={14} />
-                  </button>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    style={{ width: '80px' }}
-                    onChange={(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
-                  />
-                  <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, item.quantity + 1)}>
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </td>
-              <td>{formatCurrency(parseFloat(item.price) * item.quantity)}</td>
-              <td>
-                <button className="pill danger" onClick={() => onRemove(item.productId, item.variantId)}>
-                  Удалить
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="row justify-between" style={{ alignItems: 'center' }}>
-        <div className="stack" style={{ gap: '0.15rem' }}>
-          <span className="muted">Всего</span>
-          <h2 style={{ margin: 0 }}>{formatCurrency(cart.totalPrice)}</h2>
-        </div>
-        <button className="button" onClick={() => onNavigate('/checkout')}>
-          Перейти к оформлению
-        </button>
-      </div>
+  return html`<div class="stack">
+    <div class="row justify-between">
+      <h2 style=${{ margin: 0 }}>Корзина</h2>
+      <span class="muted">${cart.items.length} позиций</span>
     </div>
-  );
+    ${cart.error && html`<div class="alert danger">${cart.error}</div>`}
+    <table class="table">
+      <thead>
+        <tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${cart.items.map(
+          (item) => html`<tr key=${`${item.productId}:${item.variantId}`}>
+            <td>
+              <div class="stack"><strong>${item.productName}</strong><span class="muted">${item.variantLabel}</span></div>
+            </td>
+            <td>${formatCurrency(item.price)}</td>
+            <td>
+              <div class="row">
+                <button class="pill" onClick=${() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}>
+                  <${Minus} size=${14} />
+                </button>
+                <input
+                  class="input"
+                  type="number"
+                  min="1"
+                  value=${item.quantity}
+                  style=${{ width: '80px' }}
+                  onInput=${(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
+                />
+                <button class="pill" onClick=${() => onChangeQty(item.productId, item.variantId, item.quantity + 1)}>
+                  <${Plus} size=${14} />
+                </button>
+              </div>
+            </td>
+            <td>${formatCurrency(parseFloat(item.price) * item.quantity)}</td>
+            <td><button class="pill danger" onClick=${() => onRemove(item.productId, item.variantId)}>Удалить</button></td>
+          </tr>`,
+        )}
+      </tbody>
+    </table>
+    <div class="row justify-between" style=${{ alignItems: 'center' }}>
+      <div class="stack" style=${{ gap: '0.15rem' }}>
+        <span class="muted">Всего</span>
+        <h2 style=${{ margin: 0 }}>${formatCurrency(cart.totalPrice)}</h2>
+      </div>
+      <button class="button" onClick=${() => onNavigate('/checkout')}>Перейти к оформлению</button>
+    </div>
+  </div>`;
 }
 
 function CheckoutPage({ cart, onNavigate, onSubmit, user }) {
-  const [form, setForm] = useState({
-    customerName: '',
-    phone: '',
-    delivery: 'pickup',
-    address: '',
-    comment: '',
-  });
+  const [form, setForm] = useState({ customerName: '', phone: '', delivery: 'pickup', address: '', comment: '' });
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
 
-  if (!user) {
-    return (
-      <div className="surface stack" style={{ alignItems: 'flex-start' }}>
-        <h2 style={{ margin: 0 }}>Только для авторизованных</h2>
-        <p className="muted">Войдите, чтобы оформить заказ.</p>
-        <button className="button" onClick={() => onNavigate('/auth')}>
-          Перейти к входу
-        </button>
-      </div>
-    );
-  }
+  if (!user)
+    return html`<div class="surface stack" style=${{ alignItems: 'flex-start' }}>
+      <h2 style=${{ margin: 0 }}>Только для авторизованных</h2>
+      <p class="muted">Войдите, чтобы оформить заказ.</p>
+      <button class="button" onClick=${() => onNavigate('/auth')}>Перейти к входу</button>
+    </div>`;
+  if (!cart.items.length)
+    return html`<div class="surface stack">
+      <h2 style=${{ margin: 0 }}>Корзина пуста</h2>
+      <button class="button" onClick=${() => onNavigate('/')}>К каталогу</button>
+    </div>`;
 
-  if (!cart.items.length) {
-    return (
-      <div className="surface stack">
-        <h2 style={{ margin: 0 }}>Корзина пуста</h2>
-        <button className="button" onClick={() => onNavigate('/')}>
-          К каталогу
-        </button>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setSending(true);
     setError(null);
     try {
-      await onSubmit({
-        ...form,
-        address: form.delivery === 'pickup' ? null : form.address,
-      });
+      await onSubmit({ ...form, address: form.delivery === 'pickup' ? null : form.address });
     } catch (err) {
       setError('Не удалось отправить заказ');
     } finally {
@@ -640,95 +517,71 @@ function CheckoutPage({ cart, onNavigate, onSubmit, user }) {
     }
   };
 
-  return (
-    <div className="stack">
-      <div className="row" style={{ gap: '0.75rem' }}>
-        <button className="pill" onClick={() => onNavigate('/cart')}>
-          <ArrowLeft size={16} /> Назад
-        </button>
-        <h2 style={{ margin: 0 }}>Оформление заказа</h2>
-      </div>
-      <div className="section surface">
-        <form className="stack" onSubmit={handleSubmit}>
-          <label className="stack">
-            <span className="muted">Имя и фамилия</span>
-            <input
-              className="input"
-              required
-              value={form.customerName}
-              onChange={(e) => setForm((prev) => ({ ...prev, customerName: e.target.value }))}
-            />
-          </label>
-          <label className="stack">
-            <span className="muted">Телефон</span>
-            <input className="input" required value={form.phone} onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))} />
-          </label>
-          <div className="stack">
-            <span className="muted">Доставка</span>
-            <div className="row" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
-              {['pickup', 'courier', 'cdek'].map((method) => (
-                <label key={method} className="pill" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="delivery"
-                    value={method}
-                    checked={form.delivery === method}
-                    onChange={(e) => setForm((prev) => ({ ...prev, delivery: e.target.value }))}
-                  />{' '}
-                  {method === 'pickup' ? 'Самовывоз' : method === 'courier' ? 'Курьер' : 'СДЭК'}
-                </label>
-              ))}
-            </div>
-          </div>
-          {form.delivery !== 'pickup' && (
-            <label className="stack">
-              <span className="muted">Адрес</span>
-              <input
-                className="input"
-                value={form.address}
-                onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                required={form.delivery !== 'pickup'}
-              />
-            </label>
-          )}
-          <label className="stack">
-            <span className="muted">Комментарий</span>
-            <textarea
-              className="input"
-              rows="3"
-              value={form.comment}
-              onChange={(e) => setForm((prev) => ({ ...prev, comment: e.target.value }))}
-            ></textarea>
-          </label>
-          <hr className="divider" />
-          <div className="row justify-between" style={{ alignItems: 'center' }}>
-            <div className="stack" style={{ gap: '0.15rem' }}>
-              <span className="muted">{cart.totalCount} позиций</span>
-              <strong>{formatCurrency(cart.totalPrice)}</strong>
-            </div>
-            <button className="button" type="submit" disabled={sending}>
-              {sending ? 'Отправляем...' : 'Отправить заказ'}
-            </button>
-          </div>
-          {error && <div className="alert danger">{error}</div>}
-        </form>
-      </div>
-      <div className="surface stack">
-        <h3 style={{ margin: 0 }}>Состав заказа</h3>
-        {cart.items.map((item) => (
-          <div key={`${item.productId}:${item.variantId}`} className="row justify-between">
-            <div className="stack" style={{ gap: '0.1rem' }}>
-              <strong>{item.productName}</strong>
-              <span className="muted">
-                {item.variantLabel} · {formatCurrency(item.price)}
-              </span>
-            </div>
-            <span>× {item.quantity}</span>
-          </div>
-        ))}
-      </div>
+  return html`<div class="stack">
+    <div class="row" style=${{ gap: '0.75rem' }}>
+      <button class="pill" onClick=${() => onNavigate('/cart')}><${ArrowLeft} size=${16} /> Назад</button>
+      <h2 style=${{ margin: 0 }}>Оформление заказа</h2>
     </div>
-  );
+    <div class="section surface">
+      <form class="stack" onSubmit=${submit}>
+        <label class="stack">
+          <span class="muted">Имя и фамилия</span>
+          <input class="input" required value=${form.customerName} onInput=${(e) => setForm((p) => ({ ...p, customerName: e.target.value }))} />
+        </label>
+        <label class="stack">
+          <span class="muted">Телефон</span>
+          <input class="input" required value=${form.phone} onInput=${(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+        </label>
+        <div class="stack">
+          <span class="muted">Доставка</span>
+          <div class="row" style=${{ flexWrap: 'wrap', gap: '0.5rem' }}>
+            ${['pickup', 'courier', 'cdek'].map(
+              (method) => html`<label key=${method} class="pill" style=${{ cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="delivery"
+                  value=${method}
+                  checked=${form.delivery === method}
+                  onInput=${(e) => setForm((p) => ({ ...p, delivery: e.target.value }))}
+                />${' '}
+                ${method === 'pickup' ? 'Самовывоз' : method === 'courier' ? 'Курьер' : 'СДЭК'}
+              </label>`,
+            )}
+          </div>
+        </div>
+        ${form.delivery !== 'pickup' &&
+        html`<label class="stack">
+          <span class="muted">Адрес</span>
+          <input class="input" required value=${form.address} onInput=${(e) => setForm((p) => ({ ...p, address: e.target.value }))} />
+        </label>`}
+        <label class="stack">
+          <span class="muted">Комментарий</span>
+          <textarea class="input" rows="3" value=${form.comment} onInput=${(e) => setForm((p) => ({ ...p, comment: e.target.value }))}></textarea>
+        </label>
+        <hr class="divider" />
+        <div class="row justify-between" style=${{ alignItems: 'center' }}>
+          <div class="stack" style=${{ gap: '0.15rem' }}>
+            <span class="muted">${cart.totalCount} позиций</span>
+            <strong>${formatCurrency(cart.totalPrice)}</strong>
+          </div>
+          <button class="button" type="submit" disabled=${sending}>${sending ? 'Отправляем...' : 'Отправить заказ'}</button>
+        </div>
+        ${error && html`<div class="alert danger">${error}</div>`}
+      </form>
+    </div>
+    <div class="surface stack">
+      <h3 style=${{ margin: 0 }}>Состав заказа</h3>
+      ${cart.items.map(
+        (item) => html`<div key=${`${item.productId}:${item.variantId}`} class="row justify-between">
+          <div class="stack" style=${{ gap: '0.1rem' }}>
+            <strong>${item.productName}</strong>
+            <span class="muted">${item.variantLabel} · ${formatCurrency(item.price)}</span>
+          </div>
+          <span>× ${item.quantity}</span>
+        </div>`,
+      )}
+    </div>
+  </div>`;
 }
 
 function AuthPage({ onNavigate, onLogin, onRegister, auth }) {
@@ -743,12 +596,7 @@ function AuthPage({ onNavigate, onLogin, onRegister, auth }) {
       if (mode === 'login') {
         await onLogin({ email: form.email, password: form.password });
       } else {
-        await onRegister({
-          email: form.email,
-          password: form.password,
-          firstName: form.firstName,
-          lastName: form.lastName || null,
-        });
+        await onRegister({ email: form.email, password: form.password, firstName: form.firstName, lastName: form.lastName || null });
       }
       onNavigate('/');
     } catch (err) {
@@ -756,52 +604,40 @@ function AuthPage({ onNavigate, onLogin, onRegister, auth }) {
     }
   };
 
-  return (
-    <div className="stack">
-      <div className="row" style={{ gap: '0.5rem' }}>
-        <button className="pill" onClick={() => onNavigate('/')}>
-          <ArrowLeft size={16} /> Назад
-        </button>
-        <h2 style={{ margin: 0 }}>{mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
-      </div>
-      <div className="surface">
-        <div className="row" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
-          <button className={`pill ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>
-            Войти
-          </button>
-          <button className={`pill ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>
-            Создать аккаунт
-          </button>
-        </div>
-        <form className="stack" onSubmit={submit}>
-          {mode === 'register' && (
-            <label className="stack">
-              <span className="muted">Имя</span>
-              <input className="input" required value={form.firstName} onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))} />
-            </label>
-          )}
-          <label className="stack">
-            <span className="muted">Email</span>
-            <input className="input" required type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
-          </label>
-          <label className="stack">
-            <span className="muted">Пароль</span>
-            <input className="input" required type="password" minLength={8} value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} />
-          </label>
-          {mode === 'register' && (
-            <label className="stack">
-              <span className="muted">Фамилия (опционально)</span>
-              <input className="input" value={form.lastName} onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))} />
-            </label>
-          )}
-          {error && <div className="alert danger">{error}</div>}
-          <button className="button" type="submit" disabled={auth.loading}>
-            {auth.loading ? 'Сохраняем...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
-          </button>
-        </form>
-      </div>
+  return html`<div class="stack">
+    <div class="row" style=${{ gap: '0.5rem' }}>
+      <button class="pill" onClick=${() => onNavigate('/')}><${ArrowLeft} size=${16} /> Назад</button>
+      <h2 style=${{ margin: 0 }}>${mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
     </div>
-  );
+    <div class="surface">
+      <div class="row" style=${{ gap: '0.5rem', marginBottom: '1rem' }}>
+        <button class=${`pill ${mode === 'login' ? 'active' : ''}`} onClick=${() => setMode('login')}>Войти</button>
+        <button class=${`pill ${mode === 'register' ? 'active' : ''}`} onClick=${() => setMode('register')}>Создать аккаунт</button>
+      </div>
+      <form class="stack" onSubmit=${submit}>
+        ${mode === 'register' &&
+        html`<label class="stack">
+          <span class="muted">Имя</span>
+          <input class="input" required value=${form.firstName} onInput=${(e) => setForm((p) => ({ ...p, firstName: e.target.value }))} />
+        </label>`}
+        <label class="stack">
+          <span class="muted">Email</span>
+          <input class="input" required type="email" value=${form.email} onInput=${(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
+        </label>
+        <label class="stack">
+          <span class="muted">Пароль</span>
+          <input class="input" required type="password" minLength=${8} value=${form.password} onInput=${(e) => setForm((p) => ({ ...p, password: e.target.value }))} />
+        </label>
+        ${mode === 'register' &&
+        html`<label class="stack">
+          <span class="muted">Фамилия (опционально)</span>
+          <input class="input" value=${form.lastName} onInput=${(e) => setForm((p) => ({ ...p, lastName: e.target.value }))} />
+        </label>`}
+        ${error && html`<div class="alert danger">${error}</div>`}
+        <button class="button" type="submit" disabled=${auth.loading}>${auth.loading ? 'Сохраняем...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}</button>
+      </form>
+    </div>
+  </div>`;
 }
 
 function App() {
@@ -827,52 +663,41 @@ function App() {
     if (route.name === 'home') setOrderSummary(null);
   }, [route.name]);
 
-  return (
-    <RouteContext.Provider value={{ ...route, navigate }}>
-      <Header theme={theme} toggleTheme={toggleTheme} cartCount={cart.totalCount} user={auth.user} onNavigate={navigate} onLogout={() => { logout(); reset(); navigate('/'); }} />
-      <main className="section" style={{ paddingTop: 0 }}>
-        {route.name === 'home' && (
-          <Home
-            filters={filters}
-            onFiltersChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
-            onNavigate={navigate}
-            onAdd={addItem}
-            user={auth.user}
-          />
-        )}
-        {route.name === 'product' && (
-          <ProductPage id={route.params.id} onNavigate={navigate} onAdd={addItem} user={auth.user} />
-        )}
-        {route.name === 'cart' && (
-          <CartPage cart={cart} onNavigate={navigate} onChangeQty={changeQuantity} onRemove={removeItem} user={auth.user} />
-        )}
-        {route.name === 'checkout' && (
-          <>
-            {orderSummary ? (
-              <div className="surface stack">
-                <div className="alert">
-                  <ShieldCheck size={16} /> Заказ создан
-                </div>
-                <h2 style={{ margin: 0 }}>Спасибо! Заказ №{orderSummary.orderId}</h2>
-                <p className="muted">
-                  Метод доставки: {orderSummary.deliveryMethod}. Сумма: {formatCurrency(orderSummary.total)}.
-                </p>
-                <button className="button" onClick={() => navigate('/')}>
-                  Вернуться в каталог
-                </button>
-              </div>
-            ) : (
-              <CheckoutPage cart={cart} onNavigate={navigate} onSubmit={submitOrder} user={auth.user} />
-            )}
-          </>
-        )}
-        {route.name === 'auth' && (
-          <AuthPage onNavigate={navigate} onLogin={doLogin} onRegister={doRegister} auth={auth} />
-        )}
-      </main>
-    </RouteContext.Provider>
-  );
+  return html`<main class="section" style=${{ paddingTop: 0 }}>
+    <${Header}
+      theme=${theme}
+      toggleTheme=${toggleTheme}
+      cartCount=${cart.totalCount}
+      user=${auth.user}
+      onNavigate=${navigate}
+      onLogout=${() => {
+        logout();
+        reset();
+        navigate('/');
+      }}
+    />
+    ${route.name === 'home' &&
+    html`<${Home}
+      filters=${filters}
+      onFiltersChange=${(next) => setFilters((prev) => ({ ...prev, ...next }))}
+      onNavigate=${navigate}
+      onAdd=${addItem}
+      user=${auth.user}
+    />`}
+    ${route.name === 'product' && html`<${ProductPage} id=${route.params.id} onNavigate=${navigate} onAdd=${addItem} user=${auth.user} />`}
+    ${route.name === 'cart' &&
+    html`<${CartPage} cart=${cart} onNavigate=${navigate} onChangeQty=${changeQuantity} onRemove=${removeItem} user=${auth.user} />`}
+    ${route.name === 'checkout' &&
+    (orderSummary
+      ? html`<div class="surface stack">
+          <div class="alert"><${ShieldCheck} size=${16} /> Заказ создан</div>
+          <h2 style=${{ margin: 0 }}>Спасибо! Заказ №${orderSummary.orderId}</h2>
+          <p class="muted">Метод доставки: ${orderSummary.deliveryMethod}. Сумма: ${formatCurrency(orderSummary.total)}.</p>
+          <button class="button" onClick=${() => navigate('/')}>Вернуться в каталог</button>
+        </div>`
+      : html`<${CheckoutPage} cart=${cart} onNavigate=${navigate} onSubmit=${submitOrder} user=${auth.user} />`)}
+    ${route.name === 'auth' && html`<${AuthPage} onNavigate=${navigate} onLogin=${doLogin} onRegister=${doRegister} auth=${auth} />`}
+  </main>`;
 }
 
-const root = createRoot(document.getElementById('app'));
-root.render(<App />);
+createRoot(document.getElementById('app')).render(html`<${App} />`);
