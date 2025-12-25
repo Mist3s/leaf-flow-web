@@ -1,17 +1,19 @@
 # Zavarka39 web
 
-Одностраничное приложение на React (используется CDN esm.sh, сборка не нужна), которое работает поверх публичного API `https://app-stage.zavarka39.ru/api`.
+Одностраничное приложение на React + Vite (TypeScript), работает поверх публичного API `https://app-stage.zavarka39.ru/api`.
 
 ## Быстрый старт
 
 ```bash
-# запустите локальный сервер из корня репозитория
-python -m http.server 4173
-# откройте в браузере
-open http://localhost:4173
+# установить зависимости
+npm install
+# dev-режим
+npm run dev
+# прод-сборка
+npm run build
+# предпросмотр
+npm run preview
 ```
-
-Приложение использует React из CDN и не требует `npm install`.
 
 > Корзина и оформление заказа доступны только авторизованным пользователям (email/пароль).
 
