@@ -87,6 +87,18 @@ a {
   gap: 0.5rem;
 }
 
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-weight: 600;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;

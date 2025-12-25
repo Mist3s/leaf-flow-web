@@ -1,9 +1,10 @@
 import { renderHeader } from './components/header.js';
-import { getState, hydrateCart, initTheme, setTheme, subscribe } from './state.js';
+import { getState, hydrateCart, initAuth, initTheme, logoutUser, setTheme, subscribe } from './state.js';
 import { renderCart } from './views/cart.js';
 import { renderCheckout } from './views/checkout.js';
 import { renderHome } from './views/home.js';
 import { renderProduct } from './views/product.js';
+import { renderAuth } from './views/auth.js';
 
 const app = document.getElementById('app');
 const headerSlot = document.createElement('div');
@@ -34,6 +35,7 @@ function matchRoute() {
     { name: 'product', pattern: /^\/product\/([^/]+)$/, params: ['id'] },
     { name: 'cart', pattern: /^\/cart$/, params: {} },
     { name: 'checkout', pattern: /^\/checkout$/, params: {} },
+    { name: 'auth', pattern: /^\/auth$/, params: {} },
   ];
 
   for (const m of matchers) {
@@ -55,8 +57,10 @@ function renderHeaderUI() {
   renderHeader(headerSlot, {
     theme: currentState.theme,
     cartCount: currentState.cart.totalCount,
+    user: currentState.auth.user,
     onToggleTheme: () => setTheme(currentState.theme === 'dark' ? 'light' : 'dark'),
     onNavigate: navigate,
+    onLogout: logoutUser,
   });
 }
 
@@ -78,6 +82,8 @@ async function renderCurrentRoute() {
     renderCart(viewSlot, { cart: currentState.cart, lastSyncError: currentState.lastSyncError, onNavigate: navigate });
   } else if (name === 'checkout') {
     renderCheckout(viewSlot, { cart: currentState.cart, onNavigate: navigate });
+  } else if (name === 'auth') {
+    renderAuth(viewSlot, { onNavigate: navigate });
   }
 }
 
@@ -92,6 +98,7 @@ subscribe((nextState) => {
 });
 
 initTheme();
+initAuth().finally(() => renderCurrentRoute());
 renderHeaderUI();
 hydrateCart().finally(() => renderCurrentRoute());
 renderCurrentRoute();

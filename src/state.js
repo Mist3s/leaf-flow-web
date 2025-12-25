@@ -1,4 +1,14 @@
-import { clearCart, getCart, getProduct, replaceCartItems } from './api.js';
+import {
+  clearCart,
+  getCart,
+  getProduct,
+  getStoredTokens,
+  login,
+  profile,
+  register,
+  replaceCartItems,
+  setAuthTokens,
+} from './api.js';
 
 const CART_KEY = 'zavarka-cart';
 const THEME_KEY = 'zavarka-theme';
@@ -8,6 +18,12 @@ const productCache = new Map();
 
 const state = {
   theme: 'light',
+  auth: {
+    user: null,
+    tokens: null,
+    error: null,
+    loading: false,
+  },
   cart: {
     items: [],
     totalCount: 0,
@@ -215,6 +231,65 @@ export async function hydrateCart() {
       updateCart(localItems);
     }
   }
+}
+
+function updateAuth(next) {
+  state.auth = { ...state.auth, ...next };
+  notify();
+}
+
+export async function initAuth() {
+  const stored = getStoredTokens();
+  if (stored) {
+    setAuthTokens(stored);
+    state.auth.tokens = stored;
+  }
+  await loadProfile();
+}
+
+export async function loadProfile() {
+  if (!state.auth.tokens) return;
+  updateAuth({ loading: true, error: null });
+  try {
+    const user = await profile();
+    updateAuth({ user, loading: false, error: null, tokens: getStoredTokens() });
+  } catch (error) {
+    console.warn('Не удалось получить профиль', error);
+    updateAuth({ user: null, tokens: null, loading: false, error: 'Сессия истекла, войдите снова' });
+    setAuthTokens(null);
+  }
+}
+
+export async function loginUser(credentials) {
+  updateAuth({ loading: true, error: null });
+  try {
+    const res = await login(credentials);
+    setAuthTokens(res.tokens);
+    updateAuth({ user: res.user, tokens: res.tokens, loading: false });
+    return res.user;
+  } catch (error) {
+    updateAuth({ error: 'Неверные данные для входа', loading: false });
+    throw error;
+  }
+}
+
+export async function registerUser(payload) {
+  updateAuth({ loading: true, error: null });
+  try {
+    const res = await register(payload);
+    setAuthTokens(res.tokens);
+    updateAuth({ user: res.user, tokens: res.tokens, loading: false });
+    return res.user;
+  } catch (error) {
+    updateAuth({ error: 'Не удалось зарегистрироваться', loading: false });
+    throw error;
+  }
+}
+
+export function logoutUser() {
+  setAuthTokens(null);
+  updateAuth({ user: null, tokens: null, error: null });
+  clearLocalCart();
 }
 
 export function getState() {

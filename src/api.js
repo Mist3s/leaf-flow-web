@@ -1,14 +1,50 @@
 const API_BASE = 'https://app-stage.zavarka39.ru/api';
+const AUTH_KEY = 'zavarka-auth';
 
-async function request(path, options = {}) {
+let authTokens = null;
+
+export function setAuthTokens(next) {
+  authTokens = next;
+  if (next) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(next));
+  } else {
+    localStorage.removeItem(AUTH_KEY);
+  }
+}
+
+export function getStoredTokens() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.warn('Не удалось прочитать токены', error);
+    return null;
+  }
+}
+
+async function request(path, options = {}, { skipAuthRetry = false } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(authTokens?.accessToken ? { Authorization: `Bearer ${authTokens.accessToken}` } : {}),
       ...(options.headers || {}),
     },
     credentials: 'include',
   });
+
+  if (res.status === 401 && authTokens?.refreshToken && !skipAuthRetry) {
+    try {
+      const fresh = await refreshTokens(authTokens.refreshToken);
+      if (fresh?.accessToken) {
+        setAuthTokens(fresh);
+        return request(path, options, { skipAuthRetry: true });
+      }
+    } catch (err) {
+      setAuthTokens(null);
+      throw err;
+    }
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -66,4 +102,20 @@ export async function clearCart() {
 
 export async function createOrder(payload) {
   return request('/v1/orders', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function register(payload) {
+  return request('/v1/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function login(payload) {
+  return request('/v1/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function profile() {
+  return request('/v1/auth/profile');
+}
+
+export async function refreshTokens(refreshToken) {
+  return request('/v1/auth/refresh', { method: 'POST', body: JSON.stringify({ refreshToken }) }, { skipAuthRetry: true });
 }
