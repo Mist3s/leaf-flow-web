@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { listCategories, listProducts } from '../api';
 import { Product } from '../types/catalog';
-import { priceRange } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 
 type Props = {
   filters: { search: string; category: string };
   onFiltersChange: (next: Partial<Props['filters']>) => void;
   onNavigate: (path: string) => void;
-  onAdd: (product: Product, variant: Product['variants'][number]) => void;
-  user: any;
 };
 
-export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate, onAdd, user }) => {
+export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,43 +72,48 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate, on
         {error && <div className="alert danger">{error}</div>}
         {!loading && !products.length && <p className="muted">Товары не найдены.</p>}
         <div className="grid">
-          {products.map((product) => (
-            <article key={product.id} className="card">
-              <img src={product.image} alt={product.name} loading="lazy" />
-              <div className="row justify-between">
-                <h3 style={{ margin: 0 }}>{product.name}</h3>
-                <span className="badge">{product.category}</span>
-              </div>
-              <p className="muted" style={{ minHeight: '48px' }}>
-                {product.description.slice(0, 90)}...
-              </p>
-              <div className="row justify-between">
-                <div className="stack" style={{ gap: '0.15rem' }}>
-                  <strong>{priceRange(product.variants)}</strong>
-                  <span className="muted">от {product.variants?.[0]?.weight}</span>
-                </div>
-                <div className="row">
-                  <button className="button ghost" onClick={() => onNavigate(`/product/${product.id}`)}>
-                    Открыть
-                  </button>
+          {products.map((product) => {
+            const prices =
+              product.variants?.map((variant) => Number(variant.price)).filter((price) => Number.isFinite(price)) ?? [];
+            const minPrice = prices.length ? formatCurrency(Math.min(...prices)) : '—';
+
+            return (
+              <article
+                key={product.id}
+                className="card product-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => onNavigate(`/product/${product.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onNavigate(`/product/${product.id}`);
+                  }
+                }}
+              >
+                <img src={product.image} alt={product.name} loading="lazy" />
+                <h3 className="product-card__title">{product.name}</h3>
+                <p className="muted product-card__category">
+                  {product.category}
+                </p>
+                <div className="row justify-between product-card__footer">
+                  <div className="stack" style={{ gap: '0.15rem' }}>
+                    <span className="muted">Цена от</span>
+                    <strong>{minPrice}</strong>
+                  </div>
                   <button
-                    className="button"
-                    onClick={() => {
-                      const variant = product.variants?.[0];
-                      if (!variant) return;
-                      if (!user) {
-                        onNavigate('/auth');
-                        return;
-                      }
-                      onAdd(product, variant);
+                    className="button ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigate(`/product/${product.id}`);
                     }}
                   >
-                    В корзину
+                    Открыть
                   </button>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
     </div>
