@@ -6,12 +6,13 @@ type Props = {
   onLogin: (payload: { email: string; password: string }) => Promise<void>;
   onRegister: (payload: { email: string; password: string; firstName: string; lastName?: string | null }) => Promise<void>;
   auth: { loading: boolean; error: string | null };
+  mode: 'login' | 'register';
+  onModeChange: (mode: 'login' | 'register') => void;
 };
 
-export const AuthPage: React.FC<Props> = ({ onNavigate, onLogin, onRegister, auth }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+export const AuthPage: React.FC<Props> = ({ onNavigate, onLogin, onRegister, auth, mode, onModeChange }) => {
   const [form, setForm] = useState({ email: '', password: '', firstName: '', lastName: '' });
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(auth.error);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,28 +30,31 @@ export const AuthPage: React.FC<Props> = ({ onNavigate, onLogin, onRegister, aut
       }
       onNavigate('/');
     } catch (err) {
-      setError('Не удалось выполнить запрос. Проверьте данные.');
+      setError(auth.error || 'Не удалось выполнить запрос. Проверьте данные.');
     }
   };
 
   return (
-    <div className="stack">
-      <div className="row" style={{ gap: '0.5rem' }}>
+    <div className="stack auth">
+      <div className="row auth__header" style={{ gap: '0.5rem' }}>
         <button className="pill" onClick={() => onNavigate('/')}>
           <ArrowLeft size={16} /> Назад
         </button>
         <h2 style={{ margin: 0 }}>{mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
       </div>
-      <div className="surface">
-        <div className="row" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
-          <button className={`pill ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>
+      <div className="surface auth__card">
+        <div className="row auth__switcher" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
+          <button className={`pill ${mode === 'login' ? 'active' : ''}`} onClick={() => onModeChange('login')}>
             Войти
           </button>
-          <button className={`pill ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>
+          <button className={`pill ${mode === 'register' ? 'active' : ''}`} onClick={() => onModeChange('register')}>
             Создать аккаунт
           </button>
         </div>
-        <form className="stack" onSubmit={submit}>
+        <p className="muted" style={{ marginTop: 0, marginBottom: '0.4rem' }}>
+          Введите email и пароль не короче 8 символов. Для регистрации укажите имя.
+        </p>
+        <form className="stack auth__form" onSubmit={submit}>
           {mode === 'register' && (
             <label className="stack">
               <span className="muted">Имя</span>
@@ -93,10 +97,13 @@ export const AuthPage: React.FC<Props> = ({ onNavigate, onLogin, onRegister, aut
               />
             </label>
           )}
-          {error && <div className="alert danger">{error}</div>}
+          {(error || auth.error) && <div className="alert danger">{error || auth.error}</div>}
           <button className="button" type="submit" disabled={auth.loading}>
             {auth.loading ? 'Сохраняем...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
           </button>
+          <p className="muted" style={{ margin: 0, fontSize: '0.95rem' }}>
+            После входа корзина и заказы сохранятся на вашем аккаунте.
+          </p>
         </form>
       </div>
     </div>

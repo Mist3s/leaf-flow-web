@@ -11,10 +11,9 @@ type Props = {
   onAdd: (product: Product, variant: Product['variants'][number], quantity: number) => void;
   onChangeQty: (productId: string, variantId: string, quantity: number) => void;
   cart: { items: CartItem[]; totalPrice: string; totalCount: number };
-  user: any;
 };
 
-export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQty, cart, user }) => {
+export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQty, cart }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -79,7 +78,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
           <h1 style={{ margin: 0 }}>{product.name}</h1>
           <p className="muted">{product.description}</p>
           <div className="stack">
-            <span className="muted">Выберите фасовку</span>
+            <span className="muted">Выберите упаковку</span>
             <div className="variant-list">
               {product.variants.map((variant) => (
                 <button
@@ -132,10 +131,6 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                 <button
                   className="button"
                   onClick={() => {
-                    if (!user) {
-                      onNavigate('/auth');
-                      return;
-                    }
                     onAdd(product, activeVariant, quantity);
                     setQuantity(1);
                   }}
@@ -148,11 +143,11 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
           {variantInCart && (
             <div className="cart-note">
               <div className="cart-note__row">
-                <span>Эта фасовка уже в корзине</span>
+                <span>Эта упаковка уже в корзине</span>
                 <strong>{variantInCart.quantity} шт.</strong>
               </div>
               <div className="cart-note__meta">
-                Сумма по фасовке: {formatCurrency(variantTotalPrice ?? activeVariant.price)}
+                Сумма по упаковке: {formatCurrency(variantTotalPrice ?? activeVariant.price)}
               </div>
             </div>
           )}
