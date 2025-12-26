@@ -16,33 +16,33 @@ export const Header: React.FC<Props> = ({ theme, cartCount, user, onToggleTheme,
       <span className="brand-badge">
         <CupSoda size={22} />
       </span>
-      Zavarka39
+      <span className="brand-name">Zavarka39</span>
     </button>
     <div className="nav-actions">
       <button className="pill" onClick={onToggleTheme}>
         {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-        {theme === 'dark' ? 'Тёмная' : 'Светлая'}
+        <span className="pill-label">{theme === 'dark' ? 'Тёмная' : 'Светлая'}</span>
       </button>
       {user ? (
         <>
           <span className="nav-user">
             <UserRound size={16} />
-            {user.firstName || 'Профиль'}
+            <span className="nav-user-label">{user.firstName || 'Профиль'}</span>
           </span>
           <button className="pill" onClick={onLogout}>
             <LogOut size={16} />
-            Выйти
+            <span className="pill-label">Выйти</span>
           </button>
         </>
       ) : (
         <button className="pill" onClick={() => onNavigate('/auth')}>
           <LogIn size={16} />
-          Войти
+          <span className="pill-label">Войти</span>
         </button>
       )}
       <button className="pill" onClick={() => onNavigate('/cart')}>
         <ShoppingBag size={16} />
-        Корзина
+        <span className="pill-label">Корзина</span>
         <span className="badge">{cartCount}</span>
       </button>
     </div>

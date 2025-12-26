@@ -55,15 +55,15 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
           <tbody>
             {cart.items.map((item) => (
               <tr key={`${item.productId}:${item.variantId}`}>
-                <td>
+                <td data-label="Товар">
                   <div className="stack">
                     <strong>{item.productName}</strong>
                     <span className="muted">{item.variantLabel}</span>
                   </div>
                 </td>
-                <td>{formatCurrency(item.price)}</td>
-                <td>
-                  <div className="row">
+                <td data-label="Цена">{formatCurrency(item.price)}</td>
+                <td data-label="Кол-во">
+                  <div className="row cart-qty">
                     <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}>
                       <Minus size={14} />
                     </button>
@@ -80,8 +80,8 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
                     </button>
                   </div>
                 </td>
-                <td>{formatCurrency(parseFloat(item.price) * item.quantity)}</td>
-                <td>
+                <td data-label="Сумма">{formatCurrency(parseFloat(item.price) * item.quantity)}</td>
+                <td data-label="Действие">
                   <button className="pill danger" onClick={() => onRemove(item.productId, item.variantId)}>
                     Удалить
                   </button>

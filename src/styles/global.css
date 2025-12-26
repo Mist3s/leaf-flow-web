@@ -433,29 +433,51 @@ a {
     position: sticky;
   }
 
+  .brand {
+    gap: 0.5rem;
+  }
+
+  .brand-badge {
+    width: 40px;
+    height: 40px;
+  }
+
   .nav-actions {
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .nav-actions .pill,
   .nav-actions .nav-user {
-    width: 100%;
+    width: auto;
     justify-content: center;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .brand-name,
+  .pill-label,
+  .nav-user-label {
+    display: none;
   }
 
   .hero {
     padding: 1.1rem;
   }
 
+  .hero .input {
+    font-size: 0.95rem;
+  }
+
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
   }
 
   .card img {
-    height: 170px;
+    height: 180px;
   }
 
   .row {
@@ -489,7 +511,7 @@ a {
   }
 
   .table {
-    min-width: 640px;
+    min-width: auto;
   }
 
   .cart-summary {
@@ -505,6 +527,51 @@ a {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 0.75rem;
+  }
+
+  .cart-table {
+    width: 100%;
+  }
+
+  .cart-table thead {
+    display: none;
+  }
+
+  .cart-table,
+  .cart-table tbody,
+  .cart-table tr,
+  .cart-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cart-table tr {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow);
+  }
+
+  .cart-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: none;
+    background: transparent;
+  }
+
+  .cart-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .cart-qty {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 
