@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { useAuth } from './hooks/useAuth';
 import { useCart } from './hooks/useCart';
@@ -12,6 +12,7 @@ import { AuthPage } from './pages/AuthPage';
 import { createOrder, clearCart } from './api';
 import { formatCurrency } from './utils/format';
 import { CartItem } from './types/cart';
+import { ToastItem, ToastStack } from './components/Toast';
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -20,17 +21,50 @@ const App: React.FC = () => {
   const { cart, addItem, changeQuantity, removeItem, reset } = useCart(Boolean(auth.tokens));
   const [filters, setFilters] = useState({ search: '', category: '' });
   const [orderSummary, setOrderSummary] = useState<{ orderId: string; deliveryMethod: string; total: string } | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  const addToCart = (payload: Omit<CartItem, 'productName' | 'variantLabel' | 'price'> & { price: string; productName: string; variantLabel: string }) => {
+  const pushToast = (toast: Omit<ToastItem, 'id'> & { duration?: number }) => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const duration = toast.duration ?? 5500;
+    setToasts((prev) => [...prev, { ...toast, id }]);
+    if (duration !== 0) {
+      setTimeout(() => setToasts((prev) => prev.filter((item) => item.id !== id)), duration);
+    }
+  };
+
+  const openAuth = (mode: 'login' | 'register' = 'login') => {
+    setAuthMode(mode);
+    navigate('/auth');
+  };
+
+  const addToCart = (payload: Omit<CartItem, 'productName' | 'variantLabel' | 'price'> & {
+    price: string;
+    productName: string;
+    variantLabel: string;
+    image?: string;
+  }) => {
     if (!auth.user) {
-      navigate('/auth');
+      pushToast({
+        tone: 'warning',
+        message: 'Корзина доступна только авторизованным пользователям.',
+        actions: [
+          { label: 'Войти', onClick: () => openAuth('login') },
+          { label: 'Регистрация', onClick: () => openAuth('register') },
+        ],
+      });
       return;
     }
     addItem(payload);
+    pushToast({
+      tone: 'success',
+      message: `${payload.productName} (${payload.variantLabel}) добавлен в корзину.`,
+      actions: [{ label: 'Открыть корзину', onClick: () => navigate('/cart') }],
+    });
   };
 
   const submitOrder = async (payload: { customerName: string; phone: string; delivery: string; address?: string | null; comment?: string }) => {
@@ -51,7 +85,10 @@ const App: React.FC = () => {
         cartCount={cart.totalCount}
         user={auth.user}
         onToggleTheme={toggleTheme}
-        onNavigate={navigate}
+        onNavigate={(path) => {
+          if (path === '/auth') setAuthMode('login');
+          navigate(path);
+        }}
         onLogout={() => {
           logout();
           reset();
@@ -81,9 +118,9 @@ const App: React.FC = () => {
               price: variant.price,
               productName: product.name,
               variantLabel: variant.weight,
+              image: product.image,
             })
           }
-          user={auth.user}
         />
       )}
 
@@ -107,7 +144,18 @@ const App: React.FC = () => {
           <CheckoutPage cart={cart} onNavigate={navigate} onSubmit={submitOrder} user={auth.user} />
         ))}
 
-      {route.name === 'auth' && <AuthPage onNavigate={navigate} onLogin={doLogin} onRegister={doRegister} auth={auth} />}
+      {route.name === 'auth' && (
+        <AuthPage
+          onNavigate={navigate}
+          onLogin={doLogin}
+          onRegister={doRegister}
+          auth={auth}
+          mode={authMode}
+          onModeChange={setAuthMode}
+        />
+      )}
+
+      <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((toast) => toast.id !== id))} />
     </div>
   );
 };
