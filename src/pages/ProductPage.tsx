@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { getProduct } from '../api';
 import { Product } from '../types/catalog';
+import { CartItem } from '../types/cart';
 import { formatCurrency } from '../utils/format';
-import { ArrowLeft } from 'lucide-react';
 
 type Props = {
   id: string;
   onNavigate: (path: string) => void;
   onAdd: (product: Product, variant: Product['variants'][number], quantity: number) => void;
+  onChangeQty: (productId: string, variantId: string, quantity: number) => void;
+  cart: { items: CartItem[]; totalPrice: string; totalCount: number };
   user: any;
 };
 
-export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, user }) => {
+export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQty, cart, user }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -26,6 +29,30 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, user }) =>
       })
       .catch(() => setError('Не удалось загрузить товар'));
   }, [id]);
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [activeVariant?.id]);
+
+  const productCartItems = useMemo(() => {
+    if (!product) return [];
+    return cart.items.filter((item) => item.productId === product.id);
+  }, [cart.items, product]);
+
+  const variantInCart = useMemo(() => {
+    if (!product || !activeVariant) return undefined;
+    return productCartItems.find((item) => item.variantId === activeVariant.id);
+  }, [activeVariant, product, productCartItems]);
+
+  const productTotals = useMemo(
+    () => ({
+      quantity: productCartItems.reduce((sum, item) => sum + item.quantity, 0),
+      total: productCartItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * item.quantity, 0),
+    }),
+    [productCartItems],
+  );
+
+  const variantTotalPrice = variantInCart ? (parseFloat(variantInCart.price) || 0) * variantInCart.quantity : null;
 
   if (error) return <div className="alert danger">{error}</div>;
   if (!product || !activeVariant) return <p className="muted">Загружаем описание...</p>;
@@ -61,7 +88,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, user }) =>
                   onClick={() => setActiveVariant(variant)}
                 >
                   <strong>{variant.weight}</strong>
-                  <span className="muted">{formatCurrency(variant.price)}</span>
+                  <span className="variant__price">{formatCurrency(variant.price)}</span>
                 </button>
               ))}
             </div>
@@ -71,29 +98,73 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, user }) =>
               <span className="muted">Стоимость</span>
               <h2 style={{ margin: 0 }}>{formatCurrency(activeVariant.price)}</h2>
             </div>
-            <div className="row">
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                className="input"
-                style={{ width: '100px' }}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-              />
-              <button
-                className="button"
-                onClick={() => {
-                  if (!user) {
-                    onNavigate('/auth');
-                    return;
-                  }
-                  onAdd(product, activeVariant, quantity);
-                }}
-              >
-                В корзину
-              </button>
-            </div>
+            {variantInCart ? (
+              <div className="product-qty">
+                <button
+                  className="pill"
+                  aria-label="Уменьшить количество"
+                  onClick={() => onChangeQty(product.id, activeVariant.id, Math.max(1, variantInCart.quantity - 1))}
+                >
+                  <Minus size={14} />
+                </button>
+                <div className="product-qty__value">
+                  <span className="muted">В корзине</span>
+                  <strong>{variantInCart.quantity} шт.</strong>
+                </div>
+                <button
+                  className="pill"
+                  aria-label="Увеличить количество"
+                  onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="row">
+                <input
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  className="input"
+                  style={{ width: '100px' }}
+                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <button
+                  className="button"
+                  onClick={() => {
+                    if (!user) {
+                      onNavigate('/auth');
+                      return;
+                    }
+                    onAdd(product, activeVariant, quantity);
+                    setQuantity(1);
+                  }}
+                >
+                  В корзину
+                </button>
+              </div>
+            )}
           </div>
+          {variantInCart && (
+            <div className="cart-note">
+              <div className="cart-note__row">
+                <span>Эта фасовка уже в корзине</span>
+                <strong>{variantInCart.quantity} шт.</strong>
+              </div>
+              <div className="cart-note__meta">
+                Сумма по фасовке: {formatCurrency(variantTotalPrice ?? activeVariant.price)}
+              </div>
+            </div>
+          )}
+          {productTotals.quantity > 0 && (
+            <div className="cart-note">
+              <div className="cart-note__row">
+                <span>Всего по товару в корзине</span>
+                <strong>{productTotals.quantity} шт.</strong>
+              </div>
+              <div className="cart-note__meta">Общая сумма: {formatCurrency(productTotals.total)}</div>
+            </div>
+          )}
         </div>
       </section>
     </div>

@@ -71,6 +71,8 @@ const App: React.FC = () => {
         <ProductPage
           id={route.params.id}
           onNavigate={navigate}
+          cart={cart}
+          onChangeQty={changeQuantity}
           onAdd={(product, variant, quantity) =>
             addToCart({
               productId: product.id,
