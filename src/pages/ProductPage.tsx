@@ -66,7 +66,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, user }) =>
               ))}
             </div>
           </div>
-          <div className="row justify-between" style={{ alignItems: 'flex-end' }}>
+          <div className="row justify-between product-actions" style={{ alignItems: 'flex-end' }}>
             <div className="stack" style={{ gap: '0.15rem' }}>
               <span className="muted">Стоимость</span>
               <h2 style={{ margin: 0 }}>{formatCurrency(activeVariant.price)}</h2>

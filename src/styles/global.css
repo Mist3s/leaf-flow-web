@@ -404,6 +404,110 @@ a {
   color: #ef4444;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.table-wrapper .table {
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  #root {
+    padding: 0 1rem 2.5rem;
+  }
+
+  .page {
+    gap: 1rem;
+  }
+
+  .nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.85rem 0.25rem;
+    position: sticky;
+  }
+
+  .nav-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .nav-actions .pill,
+  .nav-actions .nav-user {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero {
+    padding: 1.1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .card img {
+    height: 170px;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .product-actions {
+    gap: 0.75rem;
+  }
+
+  .product-actions .row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .product-actions .input {
+    width: 100%;
+    max-width: 140px;
+  }
+
+  .product-actions .button {
+    flex: 1 1 200px;
+  }
+
+  .variant-list {
+    gap: 0.5rem;
+  }
+
+  .table-wrapper {
+    border-radius: 16px;
+  }
+
+  .table {
+    min-width: 640px;
+  }
+
+  .cart-summary {
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .checkout-header {
+    align-items: center;
+  }
+
+  .checkout-footer {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+}
+
 @media (min-width: 860px) {
   .product-header {
     grid-template-columns: 1fr 1.05fr;
