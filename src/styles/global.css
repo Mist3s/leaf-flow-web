@@ -404,6 +404,182 @@ a {
   color: #ef4444;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.table-wrapper .table {
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  #root {
+    padding: 0 1rem 2.5rem;
+  }
+
+  .page {
+    gap: 1rem;
+  }
+
+  .nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 0.25rem;
+    position: sticky;
+    justify-content: space-between;
+  }
+
+  .brand {
+    gap: 0.5rem;
+  }
+
+  .brand-badge {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-actions {
+    width: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+
+  .nav-actions .pill,
+  .nav-actions .nav-user {
+    width: auto;
+    justify-content: center;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .brand-name,
+  .pill-label {
+    display: none;
+  }
+
+  .nav-user-label {
+    display: inline !important;
+  }
+
+  .hero {
+    padding: 1.1rem;
+  }
+
+  .hero .input {
+    font-size: 0.95rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .card img {
+    height: 180px;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .product-actions {
+    gap: 0.75rem;
+  }
+
+  .product-actions .row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .product-actions .input {
+    width: 100%;
+    max-width: 140px;
+  }
+
+  .product-actions .button {
+    flex: 1 1 200px;
+  }
+
+  .variant-list {
+    gap: 0.5rem;
+  }
+
+  .table-wrapper {
+    border-radius: 16px;
+  }
+
+  .table {
+    min-width: auto;
+  }
+
+  .cart-summary {
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .checkout-header {
+    align-items: center;
+  }
+
+  .checkout-footer {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .cart-table {
+    width: 100%;
+  }
+
+  .cart-table thead {
+    display: none;
+  }
+
+  .cart-table,
+  .cart-table tbody,
+  .cart-table tr,
+  .cart-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cart-table tr {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow);
+  }
+
+  .cart-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: none;
+    background: transparent;
+  }
+
+  .cart-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .cart-qty {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 @media (min-width: 860px) {
   .product-header {
     grid-template-columns: 1fr 1.05fr;

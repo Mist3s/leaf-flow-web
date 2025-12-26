@@ -51,7 +51,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
 
   return (
     <div className="stack">
-      <div className="row" style={{ gap: '0.75rem' }}>
+      <div className="row checkout-header" style={{ gap: '0.75rem' }}>
         <button className="pill" onClick={() => onNavigate('/cart')}>
           <ArrowLeft size={16} /> Назад
         </button>
@@ -105,7 +105,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
             />
           </label>
           <hr className="divider" />
-          <div className="row justify-between" style={{ alignItems: 'center' }}>
+          <div className="row justify-between checkout-footer" style={{ alignItems: 'center' }}>
             <div className="stack" style={{ gap: '0.15rem' }}>
               <span className="muted">{cart.totalCount} позиций</span>
               <strong>{formatCurrency(cart.totalPrice)}</strong>
