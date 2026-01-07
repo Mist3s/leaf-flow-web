@@ -10,6 +10,7 @@ import { ProductPage } from './pages/ProductPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderSuccessPage } from './pages/OrderSuccessPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { AuthModal } from './components/AuthModal';
 import { createOrder, clearCart } from './api';
 import { CartItem } from './types/cart';
@@ -58,6 +59,7 @@ const App: React.FC = () => {
       product: 'Zavarka39 — Китайский чай',
       cart: 'Корзина — Zavarka39',
       checkout: orderSummary ? 'Заказ оформлен — Zavarka39' : 'Оформление заказа — Zavarka39',
+      profile: 'Мой профиль — Zavarka39',
     };
     document.title = titles[route.name] || 'Zavarka39';
   }, [route.name, orderSummary]);
@@ -192,6 +194,19 @@ const App: React.FC = () => {
         ) : (
           <CheckoutPage cart={cart} onNavigate={navigate} onSubmit={submitOrder} user={auth.user} authLoading={auth.loading} onOpenAuth={() => openAuth('login')} />
         ))}
+
+      {route.name === 'profile' && (
+        <ProfilePage 
+          user={auth.user} 
+          onNavigate={navigate} 
+          onOpenAuth={() => openAuth('login')} 
+          onLogout={() => {
+            logout();
+            reset();
+            navigate('/');
+          }}
+        />
+      )}
 
       <AuthModal
         isOpen={authModalOpen}

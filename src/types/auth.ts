@@ -11,6 +11,7 @@ export type UserProfile = {
   lastName?: string | null;
   email?: string | null;
   username?: string | null;
+  photoUrl?: string | null;
 };
 
 export type AuthResponse = {

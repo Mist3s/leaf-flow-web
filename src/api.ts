@@ -154,6 +154,39 @@ export const createOrder = (payload: Record<string, unknown>) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+// Типы для заказов
+export interface OrderListItem {
+  orderId: string;
+  customerName: string;
+  deliveryMethod: 'pickup' | 'courier' | 'cdek';
+  total: string;
+  status: 'created' | 'processing' | 'paid' | 'fulfilled' | 'cancelled';
+  createdAt: string;
+}
+
+export interface OrderDetails extends OrderListItem {
+  items: {
+    productId: string;
+    variantId: string;
+    quantity: number;
+    price: string;
+    total: string;
+    productName: string;
+    variantWeight: string;
+  }[];
+  address: string | null;
+  comment: string | null;
+}
+
+export const listOrders = (params: { limit?: number; offset?: number } = {}) => {
+  const qs = new URLSearchParams();
+  qs.set('limit', String(params.limit ?? 10));
+  qs.set('offset', String(params.offset ?? 0));
+  return request<OrderListItem[]>(`/v1/orders?${qs.toString()}`);
+};
+
+export const getOrder = (orderId: string) => request<OrderDetails>(`/v1/orders/${orderId}`);
 export const register = (payload: { email: string; password: string; firstName: string; lastName?: string | null }) =>
   request<AuthResponse>('/v1/auth/register', { method: 'POST', body: JSON.stringify(payload) });
 export const login = (payload: { email: string; password: string }) =>

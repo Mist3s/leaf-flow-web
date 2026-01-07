@@ -70,16 +70,10 @@ export const Header: React.FC<Props> = ({
             <Loader2 size={18} className="header__auth-spinner" />
           </div>
         ) : user ? (
-          <>
-            <div className="header__user">
-              <UserRound size={16} />
-              <span className="header__user-name">{user.firstName || 'Профиль'}</span>
-            </div>
-            <button className="header__action" onClick={onLogout} aria-label="Выйти">
-              <LogOut size={18} />
-              <span className="header__action-label">Выйти</span>
-            </button>
-          </>
+          <button className="header__user" onClick={() => onNavigate('/profile')}>
+            <UserRound size={16} />
+            <span className="header__user-name">{user.firstName || 'Профиль'}</span>
+          </button>
         ) : (
           <button className="header__action header__action--login" onClick={onOpenAuth}>
             <LogIn size={18} />

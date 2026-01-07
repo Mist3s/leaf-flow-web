@@ -5,6 +5,7 @@ type Route =
   | { name: 'product'; params: { id: string } }
   | { name: 'cart'; params: {} }
   | { name: 'checkout'; params: {} }
+  | { name: 'profile'; params: {} }
   | { name: 'auth'; params: {} };
 
 const parseRoute = (): Route => {
@@ -12,6 +13,7 @@ const parseRoute = (): Route => {
   if (path === '/' || path === '') return { name: 'home', params: {} };
   if (path === '/cart') return { name: 'cart', params: {} };
   if (path === '/checkout') return { name: 'checkout', params: {} };
+  if (path === '/profile') return { name: 'profile', params: {} };
   if (path === '/auth') return { name: 'auth', params: {} };
   const productMatch = path.match(/^\/product\/([^/]+)$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
