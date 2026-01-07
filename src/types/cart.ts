@@ -5,6 +5,7 @@ export type CartItem = {
   price: string;
   productName: string;
   variantLabel: string;
+  image?: string;
 };
 
 export type CartResponse = {

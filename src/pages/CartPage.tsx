@@ -12,6 +12,12 @@ type Props = {
 };
 
 export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRemove, user }) => {
+  const placeholder =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" rx="18" fill="%23f2f4f8"/><text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" fill="%235b6475" font-family="Inter, sans-serif" font-size="14">Нет фото</text></svg>`,
+    );
+
   if (!user)
     return (
       <div className="surface stack" style={{ alignItems: 'flex-start' }}>
@@ -41,57 +47,53 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
         <span className="muted">{cart.items.length} позиций</span>
       </div>
       {cart.error && <div className="alert danger">{cart.error}</div>}
-      <div className="table-wrapper">
-        <table className="table cart-table">
-          <thead>
-            <tr>
-              <th>Товар</th>
-              <th>Цена</th>
-              <th>Кол-во</th>
-              <th>Сумма</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {cart.items.map((item) => (
-              <tr key={`${item.productId}:${item.variantId}`}>
-                <td data-label="Товар">
-                  <div className="stack">
-                    <strong>{item.productName}</strong>
-                    <span className="muted">{item.variantLabel}</span>
-                  </div>
-                </td>
-                <td data-label="Цена">{formatCurrency(item.price)}</td>
-                <td data-label="Кол-во">
-                  <div className="row cart-qty">
-                    <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}>
-                      <Minus size={14} />
-                    </button>
-                    <input
-                      className="input"
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      style={{ width: '90px' }}
-                      onChange={(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
-                    />
-                    <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, item.quantity + 1)}>
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </td>
-                <td data-label="Сумма">{formatCurrency(parseFloat(item.price) * item.quantity)}</td>
-                <td data-label="Действие">
-                  <button className="pill danger" onClick={() => onRemove(item.productId, item.variantId)}>
-                    Удалить
+      <div className="cart-grid">
+        {cart.items.map((item) => (
+          <article key={`${item.productId}:${item.variantId}`} className="cart-card">
+            <div className="cart-card__media">
+              <img src={item.image || placeholder} alt={item.productName} loading="lazy" />
+            </div>
+            <div className="cart-card__content">
+              <div className="cart-card__header">
+                <div className="stack" style={{ gap: '0.15rem' }}>
+                  <strong className="cart-card__title">{item.productName}</strong>
+                  <span className="muted">Упаковка: {item.variantLabel}</span>
+                </div>
+                <button className="pill ghost" onClick={() => onRemove(item.productId, item.variantId)}>
+                  Удалить
+                </button>
+              </div>
+              <div className="cart-card__row">
+                <span className="muted">Цена</span>
+                <strong>{formatCurrency(item.price)}</strong>
+              </div>
+              <div className="cart-card__controls">
+                <div className="row cart-qty">
+                  <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}>
+                    <Minus size={14} />
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    style={{ width: '90px' }}
+                    onChange={(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
+                  />
+                  <button className="pill" onClick={() => onChangeQty(item.productId, item.variantId, item.quantity + 1)}>
+                    <Plus size={14} />
+                  </button>
+                </div>
+                <div className="stack" style={{ alignItems: 'flex-end', gap: '0.2rem' }}>
+                  <span className="muted">Сумма</span>
+                  <strong className="cart-card__total">{formatCurrency(parseFloat(item.price) * item.quantity)}</strong>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
-      <div className="row justify-between cart-summary" style={{ alignItems: 'center' }}>
+      <div className="row justify-between cart-summary" style={{ alignItems: 'center', gap: '1rem' }}>
         <div className="stack" style={{ gap: '0.15rem' }}>
           <span className="muted">Всего</span>
           <h2 style={{ margin: 0 }}>{formatCurrency(cart.totalPrice)}</h2>
