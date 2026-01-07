@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Header } from './components/Header';
 import { useAuth } from './hooks/useAuth';
@@ -26,19 +26,26 @@ const App: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const prevRouteRef = useRef(route.name);
+  const homeScrollRef = useRef(0);
+  const isRestoringScroll = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Показываем кнопку "наверх" при скролле
+  // Показываем кнопку "наверх" при скролле + сохраняем позицию главной
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
+      // Сохраняем позицию скролла для главной страницы
+      if (route.name === 'home' && !isRestoringScroll.current) {
+        homeScrollRef.current = window.scrollY;
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [route.name]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -54,6 +61,27 @@ const App: React.FC = () => {
     };
     document.title = titles[route.name] || 'Zavarka39';
   }, [route.name, orderSummary]);
+
+  // Скролл при переходе между страницами
+  useEffect(() => {
+    const prevRoute = prevRouteRef.current;
+    
+    // Восстанавливаем позицию при возврате на главную
+    if (route.name === 'home' && prevRoute !== 'home') {
+      isRestoringScroll.current = true;
+      requestAnimationFrame(() => {
+        window.scrollTo(0, homeScrollRef.current);
+        setTimeout(() => {
+          isRestoringScroll.current = false;
+        }, 100);
+      });
+    } else if (route.name !== 'home') {
+      // Скролл наверх для остальных страниц
+      window.scrollTo(0, 0);
+    }
+    
+    prevRouteRef.current = route.name;
+  }, [route.name, route.params && 'id' in route.params ? route.params.id : null]);
 
   const pushToast = (toast: Omit<ToastItem, 'id'> & { duration?: number }) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -176,7 +204,7 @@ const App: React.FC = () => {
 
       <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((toast) => toast.id !== id))} />
 
-      {showScrollTop && (
+      {showScrollTop && route.name === 'home' && (
         <button className="scroll-to-top" onClick={scrollToTop} aria-label="Наверх">
           <ChevronUp size={24} />
         </button>

@@ -6,6 +6,15 @@ import { formatCurrency } from '../utils/format';
 
 const ITEMS_PER_PAGE = 20;
 
+// Кэш для сохранения данных между переходами
+const cache = {
+  products: [] as Product[],
+  categories: [] as { id: string; label: string }[],
+  offset: 0,
+  hasMore: true,
+  filterKey: '',
+};
+
 type Props = {
   filters: { search: string; category: string };
   onFiltersChange: (next: Partial<Props['filters']>) => void;
@@ -13,9 +22,12 @@ type Props = {
 };
 
 export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const filterKey = `${filters.search}|${filters.category}`;
+  const hasCachedData = cache.filterKey === filterKey && cache.products.length > 0;
+
+  const [products, setProducts] = useState<Product[]>(hasCachedData ? cache.products : []);
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>(cache.categories);
+  const [loading, setLoading] = useState(!hasCachedData);
 
   // Маппинг id -> label для быстрого поиска
   const categoryMap = useMemo(() => {
@@ -25,21 +37,31 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
   }, [categories]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(hasCachedData ? cache.hasMore : true);
+  const [offset, setOffset] = useState(hasCachedData ? cache.offset : 0);
 
   // Ref для отслеживания элемента в конце списка
   const loaderRef = useRef<HTMLDivElement>(null);
 
   // Загрузка категорий
   useEffect(() => {
+    if (cache.categories.length > 0) return;
     listCategories()
-      .then((res) => setCategories(res.items || []))
+      .then((res) => {
+        const items = res.items || [];
+        setCategories(items);
+        cache.categories = items;
+      })
       .catch(() => setCategories([]));
   }, []);
 
   // Первичная загрузка при изменении фильтров
   useEffect(() => {
+    // Если фильтры не изменились и есть кэш — не загружаем
+    if (cache.filterKey === filterKey && cache.products.length > 0) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setProducts([]);
@@ -58,12 +80,17 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
         setHasMore(items.length === ITEMS_PER_PAGE);
         setOffset(items.length);
         setLoading(false);
+        // Сохраняем в кэш
+        cache.products = items;
+        cache.offset = items.length;
+        cache.hasMore = items.length === ITEMS_PER_PAGE;
+        cache.filterKey = filterKey;
       })
       .catch(() => {
         setError('Не удалось загрузить товары');
         setLoading(false);
       });
-  }, [filters.search, filters.category]);
+  }, [filterKey, filters.search, filters.category]);
 
   // Подгрузка следующей страницы
   const loadMore = useCallback(async () => {
@@ -78,9 +105,18 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
         offset,
       });
       const items = res.items || [];
-      setProducts((prev) => [...prev, ...items]);
+      setProducts((prev) => {
+        const updated = [...prev, ...items];
+        cache.products = updated;
+        return updated;
+      });
       setHasMore(items.length === ITEMS_PER_PAGE);
-      setOffset((prev) => prev + items.length);
+      setOffset((prev) => {
+        const updated = prev + items.length;
+        cache.offset = updated;
+        return updated;
+      });
+      cache.hasMore = items.length === ITEMS_PER_PAGE;
     } catch (err) {
       console.error('Ошибка подгрузки товаров', err);
     } finally {

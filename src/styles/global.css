@@ -1135,51 +1135,6 @@ a {
    SCROLL TO TOP BUTTON
    ======================================== */
 
-.scroll-top-btn {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: var(--primary-contrast);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  z-index: 900;
-  transition: transform 0.2s, opacity 0.2s, background 0.2s;
-  animation: scrollTopFadeIn 0.3s ease-out;
-}
-
-.scroll-top-btn:hover {
-  transform: translateY(-3px);
-  background: var(--primary);
-  filter: brightness(1.1);
-}
-
-.scroll-top-btn:active {
-  transform: translateY(-1px);
-}
-
-@keyframes scrollTopFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ========================================
-   TOAST NOTIFICATIONS
-   ======================================== */
-
 /* ========================================
    SCROLL TO TOP
    ======================================== */
@@ -1187,7 +1142,7 @@ a {
 .scroll-to-top {
   position: fixed;
   bottom: 1.5rem;
-  left: 1.5rem;
+  right: 1.5rem;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1221,6 +1176,12 @@ a {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .scroll-to-top {
+    bottom: 5rem;
   }
 }
 
