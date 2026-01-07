@@ -1131,6 +1131,103 @@ a {
    Toast Notifications
    ======================================== */
 
+/* ========================================
+   SCROLL TO TOP BUTTON
+   ======================================== */
+
+.scroll-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 900;
+  transition: transform 0.2s, opacity 0.2s, background 0.2s;
+  animation: scrollTopFadeIn 0.3s ease-out;
+}
+
+.scroll-top-btn:hover {
+  transform: translateY(-3px);
+  background: var(--primary);
+  filter: brightness(1.1);
+}
+
+.scroll-top-btn:active {
+  transform: translateY(-1px);
+}
+
+@keyframes scrollTopFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+/* ========================================
+   SCROLL TO TOP
+   ======================================== */
+
+.scroll-to-top {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 900;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  animation: scrollTopFadeIn 0.3s ease;
+}
+
+.scroll-to-top:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top:active {
+  transform: translateY(-1px);
+}
+
+@keyframes scrollTopFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   TOAST
+   ======================================== */
+
 .toast-stack {
   position: fixed;
   right: 1.25rem;
@@ -2728,6 +2825,13 @@ a {
 }
 
 @media (max-width: 720px) {
+  .scroll-top-btn {
+    bottom: 5rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+  }
+
   .order-success__card {
     padding: 1.5rem;
     border-radius: 20px;
@@ -3449,6 +3553,39 @@ a {
   .toast-stack {
     left: 1rem;
     right: 1rem;
+    bottom: auto;
+    top: 1rem;
+    flex-direction: column;
+  }
+
+  .toast {
+    animation-name: toastSlideInMobile;
+  }
+
+  .toast.closing {
+    animation-name: toastSlideOutMobile;
+  }
+
+  @keyframes toastSlideInMobile {
+    from {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes toastSlideOutMobile {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
   }
 
   .nav::before,

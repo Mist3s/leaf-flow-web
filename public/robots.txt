@@ -1,19 +1,18 @@
-# Robots.txt для Zavarka39
+# Robots.txt for Zavarka39
 # https://zavarka39.ru
 
 User-agent: *
 Allow: /
 
-# Блокируем служебные и персональные страницы
+# Block service and personal pages
 Disallow: /api/
 Disallow: /*.json$
 Disallow: /*cart*
 Disallow: /*checkout*
 Disallow: /*auth*
 
-# Карта сайта
+# Sitemap
 Sitemap: https://zavarka39.ru/sitemap.xml
 
-# Crawl-delay для вежливости
+# Crawl-delay
 Crawl-delay: 1
-

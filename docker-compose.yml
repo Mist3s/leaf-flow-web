@@ -1,0 +1,7 @@
+services:
+  leaf-flow-web-nginx:
+    image: mist3s/leaf-flow-web-nginx:prod
+    container_name: leaf-flow-web-nginx
+    ports:
+      - "5026:80"
+    restart: always

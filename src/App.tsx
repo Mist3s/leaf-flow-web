@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChevronUp } from 'lucide-react';
 import { Header } from './components/Header';
 import { useAuth } from './hooks/useAuth';
 import { useCart } from './hooks/useCart';
@@ -24,10 +25,24 @@ const App: React.FC = () => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Показываем кнопку "наверх" при скролле
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Динамический title для SEO
   useEffect(() => {
@@ -160,6 +175,12 @@ const App: React.FC = () => {
       />
 
       <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((toast) => toast.id !== id))} />
+
+      {showScrollTop && (
+        <button className="scroll-to-top" onClick={scrollToTop} aria-label="Наверх">
+          <ChevronUp size={24} />
+        </button>
+      )}
     </div>
   );
 };

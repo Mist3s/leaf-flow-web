@@ -1,0 +1,19 @@
+--------------------PROD---------------------
+
+# Сборка образа для prod
+docker build -t  mist3s/leaf-flow-web-nginx:prod .
+
+# Пуш образа в Docker Hub
+docker push mist3s/leaf-flow-web-nginx:prod
+
+----------------------------------------------
+
+--------------------STAGE---------------------
+
+# Сборка образа для prod
+docker build -t  mist3s/leaf-flow-web-nginx:stage .
+
+# Пуш образа в Docker Hub
+docker push mist3s/leaf-flow-web-nginx:stage
+
+----------------------------------------------
