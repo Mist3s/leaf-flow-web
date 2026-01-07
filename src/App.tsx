@@ -8,9 +8,9 @@ import { Home } from './pages/Home';
 import { ProductPage } from './pages/ProductPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
-import { AuthPage } from './pages/AuthPage';
+import { OrderSuccessPage } from './pages/OrderSuccessPage';
+import { AuthModal } from './components/AuthModal';
 import { createOrder, clearCart } from './api';
-import { formatCurrency } from './utils/format';
 import { CartItem } from './types/cart';
 import { ToastItem, ToastStack } from './components/Toast';
 
@@ -22,11 +22,23 @@ const App: React.FC = () => {
   const [filters, setFilters] = useState({ search: '', category: '' });
   const [orderSummary, setOrderSummary] = useState<{ orderId: string; deliveryMethod: string; total: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Динамический title для SEO
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      home: 'Zavarka39 — Китайский чай в Калининграде | Купить чай с доставкой',
+      product: 'Zavarka39 — Китайский чай',
+      cart: 'Корзина — Zavarka39',
+      checkout: orderSummary ? 'Заказ оформлен — Zavarka39' : 'Оформление заказа — Zavarka39',
+    };
+    document.title = titles[route.name] || 'Zavarka39';
+  }, [route.name, orderSummary]);
 
   const pushToast = (toast: Omit<ToastItem, 'id'> & { duration?: number }) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -39,7 +51,11 @@ const App: React.FC = () => {
 
   const openAuth = (mode: 'login' | 'register' = 'login') => {
     setAuthMode(mode);
-    navigate('/auth');
+    setAuthModalOpen(true);
+  };
+
+  const closeAuth = () => {
+    setAuthModalOpen(false);
   };
 
   const addToCart = (payload: Omit<CartItem, 'productName' | 'variantLabel' | 'price'> & {
@@ -67,7 +83,7 @@ const App: React.FC = () => {
     });
   };
 
-  const submitOrder = async (payload: { customerName: string; phone: string; delivery: string; address?: string | null; comment?: string }) => {
+  const submitOrder = async (payload: { customerName: string; phone: string; delivery: string; payment: string; address?: string | null; comment?: string }) => {
     const summary = await createOrder({ ...payload, expectedTotal: cart.totalPrice });
     await clearCart();
     reset();
@@ -84,11 +100,10 @@ const App: React.FC = () => {
         theme={theme}
         cartCount={cart.totalCount}
         user={auth.user}
+        authLoading={auth.loading}
         onToggleTheme={toggleTheme}
-        onNavigate={(path) => {
-          if (path === '/auth') setAuthMode('login');
-          navigate(path);
-        }}
+        onNavigate={navigate}
+        onOpenAuth={() => openAuth('login')}
         onLogout={() => {
           logout();
           reset();
@@ -125,35 +140,24 @@ const App: React.FC = () => {
       )}
 
       {route.name === 'cart' && (
-        <CartPage cart={cart} onNavigate={navigate} onChangeQty={changeQuantity} onRemove={removeItem} user={auth.user} />
+        <CartPage cart={cart} onNavigate={navigate} onChangeQty={changeQuantity} onRemove={removeItem} user={auth.user} authLoading={auth.loading} onOpenAuth={() => openAuth('login')} />
       )}
 
       {route.name === 'checkout' &&
         (orderSummary ? (
-          <div className="surface stack">
-            <div className="alert">Заказ создан</div>
-            <h2 style={{ margin: 0 }}>Спасибо! Заказ №{orderSummary.orderId}</h2>
-            <p className="muted">
-              Метод доставки: {orderSummary.deliveryMethod}. Сумма: {formatCurrency(orderSummary.total)}.
-            </p>
-            <button className="button" onClick={() => navigate('/')}>
-              Вернуться в каталог
-            </button>
-          </div>
+          <OrderSuccessPage order={orderSummary} onNavigate={navigate} />
         ) : (
-          <CheckoutPage cart={cart} onNavigate={navigate} onSubmit={submitOrder} user={auth.user} />
+          <CheckoutPage cart={cart} onNavigate={navigate} onSubmit={submitOrder} user={auth.user} authLoading={auth.loading} onOpenAuth={() => openAuth('login')} />
         ))}
 
-      {route.name === 'auth' && (
-        <AuthPage
-          onNavigate={navigate}
-          onLogin={doLogin}
-          onRegister={doRegister}
-          auth={auth}
-          mode={authMode}
-          onModeChange={setAuthMode}
-        />
-      )}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={closeAuth}
+        onLogin={doLogin}
+        onRegister={doRegister}
+        auth={auth}
+        initialMode={authMode}
+      />
 
       <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((toast) => toast.id !== id))} />
     </div>

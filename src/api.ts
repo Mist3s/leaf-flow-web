@@ -6,11 +6,20 @@ const API_BASE = 'https://app-stage.zavarka39.ru/api';
 const AUTH_KEY = 'zavarka-auth';
 
 let authTokens: AuthTokens | null = null;
+let isRefreshing = false;
+let refreshPromise: Promise<AuthTokens | null> | null = null;
 
 const readJSON = async <T>(res: Response): Promise<T> => {
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    let message = res.statusText;
+    try {
+      const json = JSON.parse(text);
+      message = json.detail || json.message || json.error || text;
+    } catch {
+      message = text || res.statusText;
+    }
+    throw new Error(message);
   }
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
@@ -35,15 +44,92 @@ export const getStoredTokens = (): AuthTokens | null => {
   }
 };
 
-const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
+// Получаем актуальный токен: из памяти или из localStorage
+const getActiveTokens = (): AuthTokens | null => {
+  if (authTokens) {
+    return authTokens;
+  }
+  // Fallback: читаем из localStorage если переменная не инициализирована
+  const stored = getStoredTokens();
+  if (stored) {
+    authTokens = stored; // Синхронизируем переменную
+    return stored;
+  }
+  return null;
+};
+
+// Обновление токена
+const refreshTokens = async (): Promise<AuthTokens | null> => {
+  const tokens = getActiveTokens();
+  if (!tokens?.refreshToken) {
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/v1/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+    });
+
+    if (!res.ok) {
+      // Refresh token invalid or expired
+      setAuthTokens(null);
+      return null;
+    }
+
+    const newTokens = (await res.json()) as AuthTokens;
+    setAuthTokens(newTokens);
+    return newTokens;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    setAuthTokens(null);
+    return null;
+  }
+};
+
+// Обёртка для предотвращения параллельных запросов на обновление
+const ensureRefreshTokens = async (): Promise<AuthTokens | null> => {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = refreshTokens().finally(() => {
+    isRefreshing = false;
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+};
+
+const request = async <T>(path: string, options: RequestInit = {}, retry = true): Promise<T> => {
+  const tokens = getActiveTokens();
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(authTokens?.accessToken ? { Authorization: `Bearer ${authTokens.accessToken}` } : {}),
+      ...(tokens?.accessToken ? { Authorization: `Bearer ${tokens.accessToken}` } : {}),
       ...(options.headers || {}),
     },
   });
+
+  // Если 401 и есть refresh token, пробуем обновить токен
+  if (res.status === 401 && retry) {
+    const currentTokens = getActiveTokens();
+    if (currentTokens?.refreshToken) {
+      const newTokens = await ensureRefreshTokens();
+      if (newTokens) {
+        // Повторяем запрос с новым токеном
+        return request<T>(path, options, false);
+      }
+    }
+    // Если не удалось обновить токен, выбрасываем ошибку
+    throw new Error('Unauthorized');
+  }
+
   return readJSON<T>(res);
 };
 

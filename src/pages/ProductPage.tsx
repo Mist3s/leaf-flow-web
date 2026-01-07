@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Minus, Plus } from 'lucide-react';
-import { getProduct } from '../api';
+import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Tag } from 'lucide-react';
+import { getProduct, listCategories } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
 import { formatCurrency } from '../utils/format';
@@ -17,17 +17,42 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
   const [product, setProduct] = useState<Product | null>(null);
   const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoryMap, setCategoryMap] = useState<Map<string, string>>(new Map());
+
+  // Загрузка категорий
+  useEffect(() => {
+    listCategories()
+      .then((res) => {
+        const map = new Map<string, string>();
+        (res.items || []).forEach((cat) => map.set(cat.id, cat.label));
+        setCategoryMap(map);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
+    setLoading(true);
     setError(null);
     getProduct(id)
       .then((res) => {
         setProduct(res);
         setActiveVariant(res.variants?.[0] ?? null);
+        setLoading(false);
       })
-      .catch(() => setError('Не удалось загрузить товар'));
+      .catch(() => {
+        setError('Не удалось загрузить товар');
+        setLoading(false);
+      });
   }, [id]);
+
+  // Динамический title для SEO
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} — купить в Калининграде | Zavarka39`;
+    }
+  }, [product]);
 
   useEffect(() => {
     setQuantity(1);
@@ -51,117 +76,190 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
     [productCartItems],
   );
 
-  const variantTotalPrice = variantInCart ? (parseFloat(variantInCart.price) || 0) * variantInCart.quantity : null;
+  if (loading) {
+    return (
+      <div className="pdp-loading">
+        <Loader2 size={32} className="pdp-loading__spinner" />
+        <span>Загружаем товар...</span>
+      </div>
+    );
+  }
 
-  if (error) return <div className="alert danger">{error}</div>;
-  if (!product || !activeVariant) return <p className="muted">Загружаем описание...</p>;
-
-  return (
-    <div className="stack">
-      <div className="row" style={{ marginBottom: '0.75rem' }}>
-        <button className="pill" onClick={() => onNavigate('/')}>
-          <ArrowLeft size={16} /> Назад
+  if (error) {
+    return (
+      <div className="pdp-error">
+        <div className="pdp-error__icon">
+          <Package size={32} />
+        </div>
+        <h2 className="pdp-error__title">Товар не найден</h2>
+        <p className="pdp-error__text">{error}</p>
+        <button className="button" onClick={() => onNavigate('/')}>
+          Вернуться в каталог
         </button>
       </div>
-      <section className="product-header">
-        <div className="product-visual">
-          <img src={product.image} alt={product.name} />
-        </div>
-        <div className="stack">
-          <div className="row" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
-            {product.tags.map((tag) => (
-              <span key={tag} className="badge">
-                #{tag}
-              </span>
-            ))}
-          </div>
-          <h1 style={{ margin: 0 }}>{product.name}</h1>
-          <p className="muted">{product.description}</p>
-          <div className="stack">
-            <span className="muted">Выберите упаковку</span>
-            <div className="variant-list">
-              {product.variants.map((variant) => (
-                <button
-                  key={variant.id}
-                  className={`variant ${variant.id === activeVariant.id ? 'active' : ''}`}
-                  onClick={() => setActiveVariant(variant)}
-                >
-                  <strong>{variant.weight}</strong>
-                  <span className="variant__price">{formatCurrency(variant.price)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="row justify-between product-actions" style={{ alignItems: 'flex-end' }}>
-            <div className="stack" style={{ gap: '0.15rem' }}>
-              <span className="muted">Стоимость</span>
-              <h2 style={{ margin: 0 }}>{formatCurrency(activeVariant.price)}</h2>
-            </div>
-            {variantInCart ? (
-              <div className="product-qty">
-                <button
-                  className="pill"
-                  aria-label="Уменьшить количество"
-                  onClick={() => onChangeQty(product.id, activeVariant.id, Math.max(1, variantInCart.quantity - 1))}
-                >
-                  <Minus size={14} />
-                </button>
-                <div className="product-qty__value">
-                  <span className="muted">В корзине</span>
-                  <strong>{variantInCart.quantity} шт.</strong>
-                </div>
-                <button
-                  className="pill"
-                  aria-label="Увеличить количество"
-                  onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="row">
-                <input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  className="input"
-                  style={{ width: '100px' }}
-                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                />
-                <button
-                  className="button"
-                  onClick={() => {
-                    onAdd(product, activeVariant, quantity);
-                    setQuantity(1);
-                  }}
-                >
-                  В корзину
-                </button>
-              </div>
+    );
+  }
+
+  if (!product || !activeVariant) return null;
+
+  const handleAddToCart = () => {
+    onAdd(product, activeVariant, quantity);
+    setQuantity(1);
+  };
+
+  return (
+    <div className="pdp">
+      {/* Back button */}
+      <button className="pdp-back" onClick={() => onNavigate('/')}>
+        <ArrowLeft size={20} />
+        <span>Назад в каталог</span>
+      </button>
+
+      <div className="pdp-layout">
+        {/* Image */}
+        <div className="pdp-gallery">
+          <div className="pdp-gallery__main">
+            <img src={product.image} alt={product.name} className="pdp-gallery__image" />
+            {product.category && categoryMap.get(product.category) && (
+              <span className="pdp-gallery__category">{categoryMap.get(product.category)}</span>
             )}
           </div>
-          {variantInCart && (
-            <div className="cart-note">
-              <div className="cart-note__row">
-                <span>Эта упаковка уже в корзине</span>
-                <strong>{variantInCart.quantity} шт.</strong>
-              </div>
-              <div className="cart-note__meta">
-                Сумма по упаковке: {formatCurrency(variantTotalPrice ?? activeVariant.price)}
-              </div>
+        </div>
+
+        {/* Info */}
+        <div className="pdp-info">
+          {/* Tags */}
+          {product.tags?.length > 0 && (
+            <div className="pdp-tags">
+              {product.tags.map((tag) => (
+                <span key={tag} className="pdp-tag">
+                  <Tag size={12} />
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
+
+          {/* Title */}
+          <h1 className="pdp-title">{product.name}</h1>
+
+          {/* Description */}
+          {product.description && (
+            <p className="pdp-description">{product.description}</p>
+          )}
+
+          {/* Variants */}
+          <div className="pdp-variants">
+            <span className="pdp-variants__label">Выберите упаковку</span>
+            <div className="pdp-variants__list">
+              {product.variants.map((variant) => {
+                const isActive = variant.id === activeVariant.id;
+                const inCart = productCartItems.find((item) => item.variantId === variant.id);
+                return (
+                  <button
+                    key={variant.id}
+                    className={`pdp-variant ${isActive ? 'pdp-variant--active' : ''} ${inCart ? 'pdp-variant--in-cart' : ''}`}
+                    onClick={() => setActiveVariant(variant)}
+                  >
+                    <span className="pdp-variant__weight">{variant.weight}</span>
+                    <span className="pdp-variant__price">{formatCurrency(variant.price)}</span>
+                    {inCart && (
+                      <span className="pdp-variant__cart-badge">
+                        <Check size={12} />
+                        {inCart.quantity}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Price & Actions */}
+          <div className="pdp-purchase">
+            {variantInCart ? (
+              <>
+                <div className="pdp-purchase__subtotal">
+                  {formatCurrency(parseFloat(variantInCart.price) * variantInCart.quantity)}
+                </div>
+                <div className="pdp-qty">
+                  <button
+                    className="pdp-qty__btn"
+                    onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity - 1)}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="pdp-qty__count">{variantInCart.quantity}</span>
+                  <button
+                    className="pdp-qty__btn"
+                    onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="pdp-purchase__subtotal">
+                  {formatCurrency(activeVariant.price)}
+                </div>
+                <button className="pdp-add-btn" onClick={handleAddToCart}>
+                  <ShoppingCart size={18} />
+                  В корзину
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Cart Summary */}
           {productTotals.quantity > 0 && (
-            <div className="cart-note">
-              <div className="cart-note__row">
-                <span>Всего по товару в корзине</span>
-                <strong>{productTotals.quantity} шт.</strong>
+            <div className="pdp-cart-summary">
+              <div className="pdp-cart-summary__icon">
+                <ShoppingCart size={18} />
               </div>
-              <div className="cart-note__meta">Общая сумма: {formatCurrency(productTotals.total)}</div>
+              <div className="pdp-cart-summary__info">
+                <span className="pdp-cart-summary__label">Этот товар в корзине</span>
+                <span className="pdp-cart-summary__value">
+                  {productTotals.quantity} шт. на сумму {formatCurrency(productTotals.total)}
+                </span>
+              </div>
+              <button className="pdp-cart-summary__btn" onClick={() => onNavigate('/cart')}>
+                Открыть
+              </button>
             </div>
           )}
         </div>
-      </section>
+      </div>
+
+      {/* Mobile Fixed Bottom */}
+      <div className="pdp-mobile-bar">
+        <div className="pdp-mobile-bar__price">
+          <span className="pdp-mobile-bar__price-label">Цена</span>
+          <span className="pdp-mobile-bar__price-value">{formatCurrency(activeVariant.price)}</span>
+        </div>
+        {variantInCart ? (
+          <div className="pdp-mobile-bar__qty">
+            <button
+              className="pdp-mobile-bar__qty-btn"
+              onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity - 1)}
+            >
+              <Minus size={18} />
+            </button>
+            <span className="pdp-mobile-bar__qty-value">{variantInCart.quantity}</span>
+            <button
+              className="pdp-mobile-bar__qty-btn"
+              onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+        ) : (
+          <button className="pdp-mobile-bar__add" onClick={handleAddToCart}>
+            <ShoppingCart size={18} />
+            В корзину
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -8,7 +8,7 @@ type Route =
   | { name: 'auth'; params: {} };
 
 const parseRoute = (): Route => {
-  const path = window.location.hash.replace(/^#/, '') || '/';
+  const path = window.location.pathname || '/';
   if (path === '/' || path === '') return { name: 'home', params: {} };
   if (path === '/cart') return { name: 'cart', params: {} };
   if (path === '/checkout') return { name: 'checkout', params: {} };
@@ -23,17 +23,16 @@ export const useRoute = (): [Route, (path: string) => void] => {
 
   useEffect(() => {
     const handler = () => setRoute(parseRoute());
-    window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
   }, []);
 
   const navigate = (path: string) => {
-    const normalized = path.startsWith('#') ? path : `#${path}`;
-    if (window.location.hash === normalized) {
-      setRoute(parseRoute());
-    } else {
-      window.location.hash = normalized;
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    if (window.location.pathname !== normalized) {
+      window.history.pushState({}, '', normalized);
     }
+    setRoute(parseRoute());
   };
 
   return [route, navigate];

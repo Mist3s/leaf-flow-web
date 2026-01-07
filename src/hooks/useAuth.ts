@@ -9,17 +9,26 @@ type AuthState = {
   error: string | null;
 };
 
+// Проверяем токены синхронно при инициализации
+const getInitialState = (): AuthState => {
+  const stored = getStoredTokens();
+  if (stored) {
+    setAuthTokens(stored);
+    return { user: null, tokens: stored, loading: true, error: null };
+  }
+  return { user: null, tokens: null, loading: false, error: null };
+};
+
 export const useAuth = () => {
-  const [auth, setAuth] = useState<AuthState>({ user: null, tokens: null, loading: false, error: null });
+  const [auth, setAuth] = useState<AuthState>(getInitialState);
 
   useEffect(() => {
-    const stored = getStoredTokens();
-    if (!stored) return;
-    setAuthTokens(stored);
-    setAuth((p) => ({ ...p, tokens: stored }));
+    // Если нет токенов - не делаем запрос
+    if (!auth.tokens) return;
+
+    // Загружаем профиль
     (async () => {
       try {
-        setAuth((p) => ({ ...p, loading: true }));
         const user = await profile();
         setAuth((p) => ({ ...p, user, loading: false }));
       } catch (error) {
@@ -32,16 +41,28 @@ export const useAuth = () => {
 
   const doLogin = async (payload: { email: string; password: string }) => {
     setAuth((p) => ({ ...p, loading: true, error: null }));
-    const res = await login(payload);
-    setAuthTokens(res.tokens);
-    setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
+    try {
+      const res = await login(payload);
+      setAuthTokens(res.tokens);
+      setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
+    } catch (err: any) {
+      const message = err?.message || 'Ошибка авторизации';
+      setAuth((p) => ({ ...p, loading: false, error: message }));
+      throw err;
+    }
   };
 
   const doRegister = async (payload: { email: string; password: string; firstName: string; lastName?: string | null }) => {
     setAuth((p) => ({ ...p, loading: true, error: null }));
-    const res = await register(payload);
-    setAuthTokens(res.tokens);
-    setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
+    try {
+      const res = await register(payload);
+      setAuthTokens(res.tokens);
+      setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
+    } catch (err: any) {
+      const message = err?.message || 'Ошибка регистрации';
+      setAuth((p) => ({ ...p, loading: false, error: message }));
+      throw err;
+    }
   };
 
   const logout = () => {
