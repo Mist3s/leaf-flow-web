@@ -10,6 +10,7 @@ Disallow: /*.json$
 Disallow: /*cart*
 Disallow: /*checkout*
 Disallow: /*auth*
+Disallow: /*profile*
 
 # Sitemap
 Sitemap: https://zavarka39.ru/sitemap.xml
