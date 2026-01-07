@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const { auth, doLogin, doRegister, logout } = useAuth();
   const { cart, addItem, changeQuantity, removeItem, reset } = useCart(Boolean(auth.tokens));
   const [filters, setFilters] = useState({ search: '', category: '' });
-  const [orderSummary, setOrderSummary] = useState<{ orderId: string; deliveryMethod: string; total: string } | null>(null);
+  const [orderSummary, setOrderSummary] = useState<{ orderId: string; customerName: string; deliveryMethod: string; total: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -132,7 +132,7 @@ const App: React.FC = () => {
     const summary = await createOrder({ ...payload, expectedTotal: cart.totalPrice });
     await clearCart();
     reset();
-    setOrderSummary(summary);
+    setOrderSummary({ ...summary, customerName: payload.customerName });
   };
 
   useEffect(() => {

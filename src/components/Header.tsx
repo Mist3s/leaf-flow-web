@@ -1,6 +1,9 @@
-import React from 'react';
-import { LogIn, LogOut, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send } from 'lucide-react';
 import { UserProfile } from '../types/auth';
+
+const PROMO_KEY = 'promo_bar_dismissed';
+const TELEGRAM_APP_URL = 'https://t.me/zavarka39_bot?startapp';
 
 type Props = {
   theme: 'light' | 'dark';
@@ -29,6 +32,22 @@ export const Header: React.FC<Props> = ({
   onOpenAuth,
   onLogout,
 }) => {
+  const [promoVisible, setPromoVisible] = useState(false);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem(PROMO_KEY);
+    if (!dismissed) {
+      setPromoVisible(true);
+    }
+  }, []);
+
+  const dismissPromo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPromoVisible(false);
+    localStorage.setItem(PROMO_KEY, 'true');
+  };
+
   return (
     <header className="header">
       <div className="header__left">
@@ -37,6 +56,23 @@ export const Header: React.FC<Props> = ({
           <span className="header__brand-name">Zavarka39</span>
         </button>
       </div>
+
+      {/* Промо-блок в центре */}
+      {promoVisible && (
+        <a href={TELEGRAM_APP_URL} target="_blank" rel="noopener noreferrer" className="header__promo">
+          <Sparkles size={12} className="header__promo-icon" />
+          <span className="header__promo-text">
+            <strong>−10%</strong> на первый заказ в
+          </span>
+          <span className="header__promo-tg">
+            <Send size={10} />
+            Telegram
+          </span>
+          <button className="header__promo-close" onClick={dismissPromo} aria-label="Закрыть">
+            <X size={12} />
+          </button>
+        </a>
+      )}
 
       {showSearch && (
         <div className="header__search">
