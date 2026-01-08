@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { useAuth } from './hooks/useAuth';
 import { useCart } from './hooks/useCart';
 import { useRoute } from './hooks/useRoute';
@@ -11,6 +12,9 @@ import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderSuccessPage } from './pages/OrderSuccessPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { DeliveryPage } from './pages/DeliveryPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { OfferPage } from './pages/OfferPage';
 import { AuthModal } from './components/AuthModal';
 import { createOrder, clearCart } from './api';
 import { CartItem } from './types/cart';
@@ -60,6 +64,9 @@ const App: React.FC = () => {
       cart: 'Корзина — Zavarka39',
       checkout: orderSummary ? 'Заказ оформлен — Zavarka39' : 'Оформление заказа — Zavarka39',
       profile: 'Мой профиль — Zavarka39',
+      delivery: 'Доставка и оплата — Zavarka39',
+      privacy: 'Политика конфиденциальности — Zavarka39',
+      offer: 'Публичная оферта — Zavarka39',
     };
     document.title = titles[route.name] || 'Zavarka39';
   }, [route.name, orderSummary]);
@@ -140,6 +147,7 @@ const App: React.FC = () => {
   }, [route.name]);
 
   return (
+    <>
     <div className="page">
       <Header
         theme={theme}
@@ -209,6 +217,10 @@ const App: React.FC = () => {
         />
       )}
 
+      {route.name === 'delivery' && <DeliveryPage onNavigate={navigate} />}
+      {route.name === 'privacy' && <PrivacyPage onNavigate={navigate} />}
+      {route.name === 'offer' && <OfferPage onNavigate={navigate} />}
+
       <AuthModal
         isOpen={authModalOpen}
         onClose={closeAuth}
@@ -226,6 +238,9 @@ const App: React.FC = () => {
         </button>
       )}
     </div>
+
+    <Footer onNavigate={navigate} />
+    </>
   );
 };
 
