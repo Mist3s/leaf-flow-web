@@ -213,14 +213,12 @@ a {
   50% { opacity: 0.6; }
 }
 
-.header__promo-text {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
+.header__promo-discount {
+  font-weight: 700;
 }
 
-.header__promo-text strong {
-  font-weight: 700;
+.header__promo-text {
+  display: inline;
 }
 
 .header__promo-tg {
@@ -3903,6 +3901,10 @@ a {
   }
 
   .header__user {
+    padding: 0.55rem;
+  }
+
+  .header__user-name {
     display: none;
   }
 
@@ -3922,6 +3924,10 @@ a {
 
   .header__promo-text {
     display: none;
+  }
+
+  .header__promo-discount {
+    display: inline;
   }
 
   .header__cart-badge {

@@ -197,7 +197,8 @@ const App: React.FC = () => {
 
       {route.name === 'profile' && (
         <ProfilePage 
-          user={auth.user} 
+          user={auth.user}
+          authLoading={auth.loading}
           onNavigate={navigate}
           onOpenAuth={() => openAuth('login')} 
           onLogout={() => {

@@ -2,7 +2,7 @@ import { AuthResponse, AuthTokens, UserProfile } from './types/auth';
 import { CartResponse } from './types/cart';
 import { Category, Product, ProductListResponse } from './types/catalog';
 
-const API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = 'https://app-stage.zavarka39.ru/api';
 const AUTH_KEY = 'zavarka-auth';
 
 let authTokens: AuthTokens | null = null;

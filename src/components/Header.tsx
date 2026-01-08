@@ -61,13 +61,12 @@ export const Header: React.FC<Props> = ({
       {promoVisible && (
         <a href={TELEGRAM_APP_URL} target="_blank" rel="noopener noreferrer" className="header__promo">
           <Sparkles size={12} className="header__promo-icon" />
-          <span className="header__promo-text">
-            <strong>−10%</strong> на первый заказ в
-          </span>
+          <strong className="header__promo-discount">−10%</strong>
+          <span className="header__promo-text">на первый заказ в</span>
           <span className="header__promo-tg">
             <Send size={10} />
             Telegram
-      </span>
+          </span>
           <button className="header__promo-close" onClick={dismissPromo} aria-label="Закрыть">
             <X size={12} />
           </button>

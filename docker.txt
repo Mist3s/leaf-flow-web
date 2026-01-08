@@ -17,3 +17,6 @@ docker build -t  mist3s/leaf-flow-web-nginx:stage .
 docker push mist3s/leaf-flow-web-nginx:stage
 
 ----------------------------------------------
+
+docker build --no-cache --pull -t mist3s/leaf-flow-web-nginx:stage .
+docker push mist3s/leaf-flow-web-nginx:stage
