@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 
@@ -19,7 +19,7 @@ type Props = {
   onLogout: () => void;
 };
 
-export const Header: React.FC<Props> = ({
+export const Header: React.FC<Props> = memo(({
   theme,
   cartCount,
   user,
@@ -41,17 +41,37 @@ export const Header: React.FC<Props> = ({
     }
   }, []);
 
-  const dismissPromo = (e: React.MouseEvent) => {
+  const dismissPromo = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setPromoVisible(false);
     localStorage.setItem(PROMO_KEY, 'true');
-  };
+  }, []);
+
+  const handleBrandClick = useCallback(() => {
+    onNavigate('/', true);
+  }, [onNavigate]);
+
+  const handleProfileClick = useCallback(() => {
+    onNavigate('/profile');
+  }, [onNavigate]);
+
+  const handleCartClick = useCallback(() => {
+    onNavigate('/cart');
+  }, [onNavigate]);
+
+  const handleSearchClear = useCallback(() => {
+    onSearchChange?.('');
+  }, [onSearchChange]);
+
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearchChange?.(e.target.value);
+  }, [onSearchChange]);
 
   return (
     <header className="header">
       <div className="header__left">
-        <button className="header__brand" onClick={() => onNavigate('/', true)} aria-label="Главная">
+        <button className="header__brand" onClick={handleBrandClick} aria-label="Главная">
           <img src="/logo.png" alt="Zavarka39" className="header__brand-logo" />
           <span className="header__brand-name">Zavarka39</span>
         </button>
@@ -81,16 +101,16 @@ export const Header: React.FC<Props> = ({
             type="search"
             placeholder="Поиск чая..."
             value={search}
-            onChange={(e) => onSearchChange?.(e.target.value)}
+            onChange={handleSearchInputChange}
           />
           {search && (
             <button
               className="header__search-clear"
-              onClick={() => onSearchChange?.('')}
+              onClick={handleSearchClear}
               aria-label="Очистить поиск"
             >
               <X size={16} />
-    </button>
+            </button>
           )}
         </div>
       )}
@@ -98,30 +118,32 @@ export const Header: React.FC<Props> = ({
       <div className="header__right">
         <button className="header__action header__action--theme" onClick={onToggleTheme} aria-label="Сменить тему">
           {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-      </button>
+        </button>
 
         {authLoading ? (
           <div className="header__auth-loading">
             <Loader2 size={18} className="header__auth-spinner" />
           </div>
         ) : user ? (
-          <button className="header__user" onClick={() => onNavigate('/profile')}>
+          <button className="header__user" onClick={handleProfileClick}>
             <UserRound size={16} />
             <span className="header__user-name">{user.firstName || 'Профиль'}</span>
           </button>
-      ) : (
+        ) : (
           <button className="header__action header__action--login" onClick={onOpenAuth}>
             <LogIn size={18} />
             <span className="header__action-label">Войти</span>
-        </button>
-      )}
+          </button>
+        )}
 
-        <button className="header__cart" onClick={() => onNavigate('/cart')}>
+        <button className="header__cart" onClick={handleCartClick}>
           <ShoppingBag size={18} />
           <span className="header__cart-label">Корзина</span>
           {cartCount > 0 && <span className="header__cart-badge">{cartCount}</span>}
-      </button>
-    </div>
-  </header>
-);
-};
+        </button>
+      </div>
+    </header>
+  );
+});
+
+Header.displayName = 'Header';

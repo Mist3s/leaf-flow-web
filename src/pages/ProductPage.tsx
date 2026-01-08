@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Tag } from 'lucide-react';
 import { getProduct, listCategories } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
 import { formatCurrency, getImageUrl } from '../utils/format';
-import { updateSEO } from '../utils/seo';
+import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
 
 type Props = {
   id: string;
@@ -14,7 +14,41 @@ type Props = {
   cart: { items: CartItem[]; totalPrice: string; totalCount: number };
 };
 
-export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQty, cart }) => {
+// Мемоизированный компонент варианта
+const VariantButton = memo<{
+  variant: Product['variants'][number];
+  isActive: boolean;
+  inCart?: CartItem;
+  onClick: () => void;
+}>(({ variant, isActive, inCart, onClick }) => (
+  <button
+    className={`pdp-variant ${isActive ? 'pdp-variant--active' : ''} ${inCart ? 'pdp-variant--in-cart' : ''}`}
+    onClick={onClick}
+  >
+    <span className="pdp-variant__weight">{variant.weight}</span>
+    <span className="pdp-variant__price">{formatCurrency(variant.price)}</span>
+    {inCart && (
+      <span className="pdp-variant__cart-badge">
+        <Check size={12} />
+        {inCart.quantity}
+      </span>
+    )}
+  </button>
+));
+
+VariantButton.displayName = 'VariantButton';
+
+// Мемоизированный компонент тега
+const ProductTag = memo<{ tag: string }>(({ tag }) => (
+  <span className="pdp-tag">
+    <Tag size={12} />
+    {tag}
+  </span>
+));
+
+ProductTag.displayName = 'ProductTag';
+
+export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -46,21 +80,53 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
         setError('Не удалось загрузить товар');
         setLoading(false);
       });
+    
+    // Очищаем динамические схемы при уходе со страницы
+    return () => {
+      clearDynamicSchemas();
+    };
   }, [id]);
 
   // Динамическое SEO для страницы товара
   useEffect(() => {
     if (product) {
-      const priceText = product.variants.length > 0 
-        ? `от ${formatCurrency(Math.min(...product.variants.map(v => parseFloat(v.price))))}`
-        : '';
+      const minPrice = product.variants.length > 0 
+        ? Math.min(...product.variants.map(v => parseFloat(v.price)))
+        : 0;
+      const priceText = minPrice > 0 ? `от ${formatCurrency(minPrice)}` : '';
+      const categoryName = product.category ? categoryMap.get(product.category) : undefined;
+      
+      // Обновляем мета-теги
       updateSEO({
         title: `${product.name} — купить в Калининграде | Zavarka39`,
         description: `${product.name} ${priceText}. Купить китайский чай в Калининграде с доставкой. ${product.description?.slice(0, 120) || 'Премиальный чай из Китая.'}`,
         canonical: `/product/${product.id}`,
+        type: 'product',
+        image: product.image,
       });
+      
+      // Добавляем структурированные данные для товара
+      updateProductSchema({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        image: product.image,
+        price: String(minPrice),
+        category: categoryName,
+        availability: 'InStock',
+      });
+      
+      // Обновляем хлебные крошки
+      const breadcrumbs = [
+        { name: 'Главная', url: '/' },
+      ];
+      if (categoryName) {
+        breadcrumbs.push({ name: categoryName, url: `/?category=${product.category}` });
+      }
+      breadcrumbs.push({ name: product.name, url: `/product/${product.id}` });
+      updateBreadcrumbSchema(breadcrumbs);
     }
-  }, [product]);
+  }, [product, categoryMap]);
 
   useEffect(() => {
     setQuantity(1);
@@ -84,6 +150,25 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
     [productCartItems],
   );
 
+  const handleAddToCart = useCallback(() => {
+    if (product && activeVariant) {
+      onAdd(product, activeVariant, quantity);
+      setQuantity(1);
+    }
+  }, [product, activeVariant, quantity, onAdd]);
+
+  const handleNavigateBack = useCallback(() => {
+    onNavigate('/');
+  }, [onNavigate]);
+
+  const handleNavigateToCart = useCallback(() => {
+    onNavigate('/cart');
+  }, [onNavigate]);
+
+  const handleVariantClick = useCallback((variant: Product['variants'][number]) => {
+    setActiveVariant(variant);
+  }, []);
+
   if (loading) {
     return (
       <div className="pdp-loading">
@@ -94,14 +179,14 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
   }
 
   if (error) {
-  return (
+    return (
       <div className="pdp-error">
         <div className="pdp-error__icon">
           <Package size={32} />
         </div>
         <h2 className="pdp-error__title">Товар не найден</h2>
         <p className="pdp-error__text">{error}</p>
-        <button className="button" onClick={() => onNavigate('/')}>
+        <button className="button" onClick={handleNavigateBack}>
           Вернуться в каталог
         </button>
       </div>
@@ -110,15 +195,10 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
 
   if (!product || !activeVariant) return null;
 
-  const handleAddToCart = () => {
-    onAdd(product, activeVariant, quantity);
-    setQuantity(1);
-  };
-
   return (
     <div className="pdp">
       {/* Back button */}
-      <button className="pdp-back" onClick={() => onNavigate('/')}>
+      <button className="pdp-back" onClick={handleNavigateBack}>
         <ArrowLeft size={20} />
         <span>Назад в каталог</span>
       </button>
@@ -127,7 +207,13 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
         {/* Image */}
         <div className="pdp-gallery">
           <div className="pdp-gallery__main">
-            <img src={getImageUrl(product.image)} alt={product.name} className="pdp-gallery__image" />
+            <img 
+              src={getImageUrl(product.image)} 
+              alt={product.name} 
+              className="pdp-gallery__image"
+              loading="eager"
+              decoding="async"
+            />
             {product.category && categoryMap.get(product.category) && (
               <span className="pdp-gallery__category">{categoryMap.get(product.category)}</span>
             )}
@@ -139,13 +225,10 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
           {/* Tags */}
           {product.tags?.length > 0 && (
             <div className="pdp-tags">
-            {product.tags.map((tag) => (
-                <span key={tag} className="pdp-tag">
-                  <Tag size={12} />
-                  {tag}
-              </span>
-            ))}
-          </div>
+              {product.tags.map((tag) => (
+                <ProductTag key={tag} tag={tag} />
+              ))}
+            </div>
           )}
 
           {/* Title */}
@@ -160,26 +243,15 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
           <div className="pdp-variants">
             <span className="pdp-variants__label">Выберите упаковку</span>
             <div className="pdp-variants__list">
-              {product.variants.map((variant) => {
-                const isActive = variant.id === activeVariant.id;
-                const inCart = productCartItems.find((item) => item.variantId === variant.id);
-                return (
-                <button
+              {product.variants.map((variant) => (
+                <VariantButton
                   key={variant.id}
-                    className={`pdp-variant ${isActive ? 'pdp-variant--active' : ''} ${inCart ? 'pdp-variant--in-cart' : ''}`}
-                  onClick={() => setActiveVariant(variant)}
-                >
-                    <span className="pdp-variant__weight">{variant.weight}</span>
-                    <span className="pdp-variant__price">{formatCurrency(variant.price)}</span>
-                    {inCart && (
-                      <span className="pdp-variant__cart-badge">
-                        <Check size={12} />
-                        {inCart.quantity}
-                      </span>
-                    )}
-                </button>
-                );
-              })}
+                  variant={variant}
+                  isActive={variant.id === activeVariant.id}
+                  inCart={productCartItems.find((item) => item.variantId === variant.id)}
+                  onClick={() => handleVariantClick(variant)}
+                />
+              ))}
             </div>
           </div>
 
@@ -198,13 +270,13 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                     <Minus size={16} />
                   </button>
                   <span className="pdp-qty__count">{variantInCart.quantity}</span>
-                <button
+                  <button
                     className="pdp-qty__btn"
-                  onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
-                >
+                    onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
+                  >
                     <Plus size={16} />
-                </button>
-              </div>
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -231,7 +303,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                   {productTotals.quantity} шт. на сумму {formatCurrency(productTotals.total)}
                 </span>
               </div>
-              <button className="pdp-cart-summary__btn" onClick={() => onNavigate('/cart')}>
+              <button className="pdp-cart-summary__btn" onClick={handleNavigateToCart}>
                 Открыть
               </button>
             </div>
@@ -270,4 +342,6 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
       </div>
     </div>
   );
-};
+});
+
+ProductPage.displayName = 'ProductPage';

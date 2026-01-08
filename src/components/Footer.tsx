@@ -1,31 +1,41 @@
-import React from 'react';
+import React, { useCallback, memo, useMemo } from 'react';
 import { Phone, Send, Truck, FileText, Shield } from 'lucide-react';
 
 type Props = {
   onNavigate: (path: string) => void;
 };
 
-export const Footer: React.FC<Props> = ({ onNavigate }) => {
-  const currentYear = new Date().getFullYear();
+export const Footer: React.FC<Props> = memo(({ onNavigate }) => {
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-  const handleLinkClick = (e: React.MouseEvent, path: string) => {
+  const handleDeliveryClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate(path);
-  };
+    onNavigate('/delivery');
+  }, [onNavigate]);
+
+  const handlePrivacyClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigate('/privacy');
+  }, [onNavigate]);
+
+  const handleOfferClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigate('/offer');
+  }, [onNavigate]);
 
   return (
     <footer className="footer">
       <div className="footer__main">
         <div className="footer__links">
-          <a href="/delivery" onClick={(e) => handleLinkClick(e, '/delivery')}>
+          <a href="/delivery" onClick={handleDeliveryClick}>
             <Truck size={14} />
             Доставка и оплата
           </a>
-          <a href="/privacy" onClick={(e) => handleLinkClick(e, '/privacy')}>
+          <a href="/privacy" onClick={handlePrivacyClick}>
             <Shield size={14} />
             Конфиденциальность
           </a>
-          <a href="/offer" onClick={(e) => handleLinkClick(e, '/offer')}>
+          <a href="/offer" onClick={handleOfferClick}>
             <FileText size={14} />
             Оферта
           </a>
@@ -49,4 +59,6 @@ export const Footer: React.FC<Props> = ({ onNavigate }) => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = 'Footer';

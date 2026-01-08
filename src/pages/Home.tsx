@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
 import { Search, Package, Loader2, Send, Smartphone, Phone } from 'lucide-react';
 import { listCategories, listProducts } from '../api';
 import { Product } from '../types/catalog';
@@ -21,7 +21,97 @@ type Props = {
   onNavigate: (path: string) => void;
 };
 
-export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) => {
+// Мемоизированная карточка товара
+const ProductCard = memo<{
+  product: Product;
+  categoryLabel?: string;
+  index: number;
+  onNavigate: (path: string) => void;
+}>(({ product, categoryLabel, index, onNavigate }) => {
+  const prices = useMemo(() => 
+    product.variants?.map((variant) => Number(variant.price)).filter((price) => Number.isFinite(price)) ?? [],
+    [product.variants]
+  );
+  const minPrice = prices.length ? Math.min(...prices) : null;
+
+  const handleClick = useCallback(() => {
+    onNavigate(`/product/${product.id}`);
+  }, [onNavigate, product.id]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onNavigate(`/product/${product.id}`);
+    }
+  }, [onNavigate, product.id]);
+
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onNavigate(`/product/${product.id}`);
+  }, [onNavigate, product.id]);
+
+  return (
+    <article
+      className="product-card"
+      role="button"
+      tabIndex={0}
+      style={{ animationDelay: `${Math.min(index, 20) * 0.03}s` }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="product-card__image-wrap">
+        <img 
+          src={getImageUrl(product.image)} 
+          alt={product.name} 
+          loading="lazy" 
+          decoding="async"
+          className="product-card__image" 
+        />
+        {categoryLabel && (
+          <span className="product-card__category-badge">{categoryLabel}</span>
+        )}
+      </div>
+      <div className="product-card__body">
+        <h3 className="product-card__name">{product.name}</h3>
+        <div className="product-card__footer">
+          <div className="product-card__price">
+            {minPrice !== null ? (
+              <>
+                <span className="product-card__price-label">от</span>
+                <span className="product-card__price-value">{formatCurrency(minPrice)}</span>
+              </>
+            ) : (
+              <span className="product-card__price-value">—</span>
+            )}
+          </div>
+          <button className="product-card__btn" onClick={handleButtonClick}>
+            Подробнее
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+});
+
+ProductCard.displayName = 'ProductCard';
+
+// Мемоизированная кнопка категории
+const CategoryButton = memo<{
+  category: { id: string; label: string } | null;
+  isActive: boolean;
+  onClick: () => void;
+}>(({ category, isActive, onClick }) => (
+  <button
+    className={`home-category ${isActive ? 'home-category--active' : ''}`}
+    onClick={onClick}
+  >
+    {category?.label || 'Все'}
+  </button>
+));
+
+CategoryButton.displayName = 'CategoryButton';
+
+export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigate }) => {
   const filterKey = `${filters.search}|${filters.category}`;
   const hasCachedData = cache.filterKey === filterKey && cache.products.length > 0;
 
@@ -35,6 +125,7 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
     categories.forEach((cat) => map.set(cat.id, cat.label));
     return map;
   }, [categories]);
+
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(hasCachedData ? cache.hasMore : true);
@@ -142,6 +233,34 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, loadMore]);
 
+  // Обработчики событий
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFiltersChange({ search: e.target.value });
+  }, [onFiltersChange]);
+
+  const handleClearSearch = useCallback(() => {
+    onFiltersChange({ search: '' });
+  }, [onFiltersChange]);
+
+  const handleCategoryClick = useCallback((categoryId: string) => {
+    onFiltersChange({ category: categoryId });
+  }, [onFiltersChange]);
+
+  const handleResetFilters = useCallback(() => {
+    onFiltersChange({ search: '', category: '' });
+  }, [onFiltersChange]);
+
+  // Заголовок секции товаров
+  const productsTitle = useMemo(() => {
+    if (filters.category) {
+      return categories.find((c) => c.id === filters.category)?.label || 'Товары';
+    }
+    if (filters.search) {
+      return 'Результаты поиска';
+    }
+    return 'Все товары';
+  }, [filters.category, filters.search, categories]);
+
   return (
     <div className="home">
       {/* Hero Section */}
@@ -192,18 +311,15 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
         <div className="home-search">
           <div className="home-search__input-wrap">
             <Search size={20} className="home-search__icon" />
-        <input
+            <input
               className="home-search__input"
-          type="search"
+              type="search"
               placeholder="Найти чай по названию или категории..."
-          value={filters.search}
-          onChange={(e) => onFiltersChange({ search: e.target.value })}
-        />
+              value={filters.search}
+              onChange={handleSearchChange}
+            />
             {filters.search && (
-              <button
-                className="home-search__clear"
-                onClick={() => onFiltersChange({ search: '' })}
-              >
+              <button className="home-search__clear" onClick={handleClearSearch}>
                 Очистить
               </button>
             )}
@@ -214,20 +330,18 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
       {/* Categories */}
       <section className="home-categories">
         <div className="home-categories__list">
-          <button
-            className={`home-category ${!filters.category ? 'home-category--active' : ''}`}
-            onClick={() => onFiltersChange({ category: '' })}
-          >
-            Все
-          </button>
+          <CategoryButton
+            category={null}
+            isActive={!filters.category}
+            onClick={() => handleCategoryClick('')}
+          />
           {categories.map((cat) => (
-            <button
+            <CategoryButton
               key={cat.id}
-              className={`home-category ${filters.category === cat.id ? 'home-category--active' : ''}`}
-              onClick={() => onFiltersChange({ category: cat.id })}
-            >
-              {cat.label}
-            </button>
+              category={cat}
+              isActive={filters.category === cat.id}
+              onClick={() => handleCategoryClick(cat.id)}
+            />
           ))}
         </div>
       </section>
@@ -235,13 +349,7 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
       {/* Products */}
       <section className="home-products">
         <div className="home-products__header">
-          <h2 className="home-products__title">
-            {filters.category
-              ? categories.find((c) => c.id === filters.category)?.label || 'Товары'
-              : filters.search
-              ? `Результаты поиска`
-              : 'Все товары'}
-          </h2>
+          <h2 className="home-products__title">{productsTitle}</h2>
           <span className="home-products__count">
             {loading ? 'Загрузка...' : `${products.length} ${getProductsWord(products.length)}`}
           </span>
@@ -256,7 +364,7 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
             </div>
             <h3 className="home-empty__title">Ничего не найдено</h3>
             <p className="home-empty__text">Попробуйте изменить параметры поиска или выбрать другую категорию</p>
-            <button className="button" onClick={() => onFiltersChange({ search: '', category: '' })}>
+            <button className="button" onClick={handleResetFilters}>
               Сбросить фильтры
             </button>
           </div>
@@ -270,59 +378,15 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
         )}
 
         <div className="home-grid">
-          {products.map((product, index) => {
-            const prices =
-              product.variants?.map((variant) => Number(variant.price)).filter((price) => Number.isFinite(price)) ?? [];
-            const minPrice = prices.length ? Math.min(...prices) : null;
-
-            return (
-              <article
-                key={product.id}
-                className="product-card"
-                role="button"
-                tabIndex={0}
-                style={{ animationDelay: `${Math.min(index, 20) * 0.03}s` }}
-                onClick={() => onNavigate(`/product/${product.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onNavigate(`/product/${product.id}`);
-                  }
-                }}
-              >
-                <div className="product-card__image-wrap">
-                  <img src={getImageUrl(product.image)} alt={product.name} loading="lazy" className="product-card__image" />
-                  {product.category && categoryMap.get(product.category) && (
-                    <span className="product-card__category-badge">{categoryMap.get(product.category)}</span>
-                  )}
-                </div>
-                <div className="product-card__body">
-                  <h3 className="product-card__name">{product.name}</h3>
-                  <div className="product-card__footer">
-                    <div className="product-card__price">
-                      {minPrice !== null ? (
-                        <>
-                          <span className="product-card__price-label">от</span>
-                          <span className="product-card__price-value">{formatCurrency(minPrice)}</span>
-                        </>
-                      ) : (
-                        <span className="product-card__price-value">—</span>
-                      )}
-                  </div>
-                  <button
-                      className="product-card__btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigate(`/product/${product.id}`);
-                    }}
-                  >
-                      Подробнее
-                  </button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              categoryLabel={product.category ? categoryMap.get(product.category) : undefined}
+              index={index}
+              onNavigate={onNavigate}
+            />
+          ))}
         </div>
 
         {/* Loader для бесконечной прокрутки */}
@@ -340,10 +404,11 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
           )}
         </div>
       </section>
-
     </div>
   );
-};
+});
+
+Home.displayName = 'Home';
 
 function getProductsWord(count: number): string {
   const lastTwo = count % 100;
