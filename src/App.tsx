@@ -198,7 +198,7 @@ const App: React.FC = () => {
       {route.name === 'profile' && (
         <ProfilePage 
           user={auth.user} 
-          onNavigate={navigate} 
+          onNavigate={navigate}
           onOpenAuth={() => openAuth('login')} 
           onLogout={() => {
             logout();
@@ -211,11 +211,11 @@ const App: React.FC = () => {
       <AuthModal
         isOpen={authModalOpen}
         onClose={closeAuth}
-        onLogin={doLogin}
-        onRegister={doRegister}
-        auth={auth}
+          onLogin={doLogin}
+          onRegister={doRegister}
+          auth={auth}
         initialMode={authMode}
-      />
+        />
 
       <ToastStack toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((toast) => toast.id !== id))} />
 

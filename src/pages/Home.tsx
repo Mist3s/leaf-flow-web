@@ -192,13 +192,13 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
         <div className="home-search">
           <div className="home-search__input-wrap">
             <Search size={20} className="home-search__icon" />
-            <input
+        <input
               className="home-search__input"
-              type="search"
+          type="search"
               placeholder="Найти чай по названию или категории..."
-              value={filters.search}
-              onChange={(e) => onFiltersChange({ search: e.target.value })}
-            />
+          value={filters.search}
+          onChange={(e) => onFiltersChange({ search: e.target.value })}
+        />
             {filters.search && (
               <button
                 className="home-search__clear"
@@ -308,16 +308,16 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
                       ) : (
                         <span className="product-card__price-value">—</span>
                       )}
-                    </div>
-                    <button
+                  </div>
+                  <button
                       className="product-card__btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNavigate(`/product/${product.id}`);
-                      }}
-                    >
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigate(`/product/${product.id}`);
+                    }}
+                  >
                       Подробнее
-                    </button>
+                  </button>
                   </div>
                 </div>
               </article>

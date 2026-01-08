@@ -86,7 +86,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
   }
 
   if (error) {
-    return (
+  return (
       <div className="pdp-error">
         <div className="pdp-error__icon">
           <Package size={32} />
@@ -131,13 +131,13 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
           {/* Tags */}
           {product.tags?.length > 0 && (
             <div className="pdp-tags">
-              {product.tags.map((tag) => (
+            {product.tags.map((tag) => (
                 <span key={tag} className="pdp-tag">
                   <Tag size={12} />
                   {tag}
-                </span>
-              ))}
-            </div>
+              </span>
+            ))}
+          </div>
           )}
 
           {/* Title */}
@@ -156,11 +156,11 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                 const isActive = variant.id === activeVariant.id;
                 const inCart = productCartItems.find((item) => item.variantId === variant.id);
                 return (
-                  <button
-                    key={variant.id}
+                <button
+                  key={variant.id}
                     className={`pdp-variant ${isActive ? 'pdp-variant--active' : ''} ${inCart ? 'pdp-variant--in-cart' : ''}`}
-                    onClick={() => setActiveVariant(variant)}
-                  >
+                  onClick={() => setActiveVariant(variant)}
+                >
                     <span className="pdp-variant__weight">{variant.weight}</span>
                     <span className="pdp-variant__price">{formatCurrency(variant.price)}</span>
                     {inCart && (
@@ -169,7 +169,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                         {inCart.quantity}
                       </span>
                     )}
-                  </button>
+                </button>
                 );
               })}
             </div>
@@ -190,13 +190,13 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
                     <Minus size={16} />
                   </button>
                   <span className="pdp-qty__count">{variantInCart.quantity}</span>
-                  <button
+                <button
                     className="pdp-qty__btn"
-                    onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
-                  >
+                  onClick={() => onChangeQty(product.id, activeVariant.id, variantInCart.quantity + 1)}
+                >
                     <Plus size={16} />
-                  </button>
-                </div>
+                </button>
+              </div>
               </>
             ) : (
               <>

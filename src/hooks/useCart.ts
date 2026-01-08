@@ -77,7 +77,7 @@ export const useCart = (hasAuth: boolean) => {
             image: product.image,
             variants: product.variants,
           });
-        } catch (error) {
+    } catch (error) {
           console.warn(`Не удалось загрузить продукт ${productId}`, error);
         }
       }),

@@ -62,32 +62,32 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
     <div className={`toast toast--${toast.tone || 'info'} ${isExiting ? 'toast--exiting' : ''}`}>
       <div className="toast__icon-wrap">
         <Icon size={20} className="toast__icon" />
-      </div>
+          </div>
 
       <div className="toast__content">
         <p className="toast__message">{toast.message}</p>
         {toast.actions && toast.actions.length > 0 && (
-          <div className="toast__actions">
-            {toast.actions.map((action) => (
-              <button
-                key={action.label}
-                type="button"
-                className="toast__action"
-                onClick={() => {
-                  action.onClick();
+              <div className="toast__actions">
+                {toast.actions.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    className="toast__action"
+                    onClick={() => {
+                      action.onClick();
                   handleClose();
-                }}
-              >
-                {action.label}
-              </button>
-            ))}
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       <button className="toast__close" aria-label="Закрыть уведомление" onClick={handleClose}>
         <X size={18} />
-      </button>
+          </button>
 
       {duration > 0 && (
         <div className="toast__progress">

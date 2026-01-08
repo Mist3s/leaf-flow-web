@@ -78,7 +78,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
         <div className="cart-header__info">
           <h1 className="cart-header__title">Корзина</h1>
           <span className="cart-header__count">{cart.totalCount} {getItemsWord(cart.totalCount)}</span>
-        </div>
+      </div>
       </header>
 
       {cart.error && <div className="alert danger">{cart.error}</div>}
@@ -92,7 +92,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div className="cart-item__media">
-                <img src={item.image || placeholder} alt={item.productName} loading="lazy" />
+              <img src={item.image || placeholder} alt={item.productName} loading="lazy" />
               </div>
 
               <div className="cart-item__body">
@@ -100,7 +100,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
                   <div className="cart-item__info">
                     <h3 className="cart-item__name">{item.productName}</h3>
                     <span className="cart-item__variant">{item.variantLabel}</span>
-                  </div>
+              </div>
                   <button
                     className="cart-item__remove"
                     onClick={() => onRemove(item.productId, item.variantId)}
@@ -118,24 +118,24 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
                       disabled={item.quantity <= 1}
                       aria-label="Уменьшить количество"
                     >
-                      <Minus size={14} />
-                    </button>
-                    <input
+                    <Minus size={14} />
+                  </button>
+                  <input
                       className="cart-qty__input"
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(e) => onChangeQty(item.productId, item.variantId, Math.max(1, Number(e.target.value) || 1))}
                       aria-label="Количество"
-                    />
+                  />
                     <button
                       className="cart-qty__btn"
                       onClick={() => onChangeQty(item.productId, item.variantId, item.quantity + 1)}
                       aria-label="Увеличить количество"
                     >
-                      <Plus size={14} />
-                    </button>
-                  </div>
+                    <Plus size={14} />
+                  </button>
+                </div>
 
                   <div className="cart-item__pricing">
                     <span className="cart-item__unit-price">{formatCurrency(item.price)} / шт</span>

@@ -2,6 +2,10 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
+# API URL для сборки (обязательный аргумент)
+ARG VITE_API_BASE
+ENV VITE_API_BASE=$VITE_API_BASE
+
 # Копируем файлы зависимостей
 COPY package*.json ./
 

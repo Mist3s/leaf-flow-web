@@ -34,7 +34,7 @@ export const useRoute = (): [Route, (path: string) => void] => {
     if (window.location.pathname !== normalized) {
       window.history.pushState({}, '', normalized);
     }
-    setRoute(parseRoute());
+      setRoute(parseRoute());
   };
 
   return [route, navigate];
