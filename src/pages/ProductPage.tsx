@@ -4,6 +4,7 @@ import { getProduct, listCategories } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
 import { formatCurrency, getImageUrl } from '../utils/format';
+import { updateSEO } from '../utils/seo';
 
 type Props = {
   id: string;
@@ -47,10 +48,17 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
       });
   }, [id]);
 
-  // Динамический title для SEO
+  // Динамическое SEO для страницы товара
   useEffect(() => {
     if (product) {
-      document.title = `${product.name} — купить в Калининграде | Zavarka39`;
+      const priceText = product.variants.length > 0 
+        ? `от ${formatCurrency(Math.min(...product.variants.map(v => parseFloat(v.price))))}`
+        : '';
+      updateSEO({
+        title: `${product.name} — купить в Калининграде | Zavarka39`,
+        description: `${product.name} ${priceText}. Купить китайский чай в Калининграде с доставкой. ${product.description?.slice(0, 120) || 'Премиальный чай из Китая.'}`,
+        canonical: `/product/${product.id}`,
+      });
     }
   }, [product]);
 

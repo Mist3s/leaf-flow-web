@@ -27,18 +27,32 @@ async function fetchAllProducts() {
   return products;
 }
 
+// Статические страницы сайта
+const STATIC_PAGES = [
+  { path: '/', changefreq: 'daily', priority: '1.0' },
+  { path: '/delivery', changefreq: 'monthly', priority: '0.6' },
+  { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
+  { path: '/offer', changefreq: 'yearly', priority: '0.3' },
+];
+
 function generateSitemap(products) {
   const today = new Date().toISOString().split('T')[0];
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${SITE_URL}/</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
 
+  // Статические страницы
+  for (const page of STATIC_PAGES) {
+    xml += `
+  <url>
+    <loc>${SITE_URL}${page.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+  }
+
+  // Страницы товаров
   for (const product of products) {
     xml += `
   <url>
@@ -63,7 +77,7 @@ async function main() {
   const outputPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
   await fs.writeFile(outputPath, sitemap, 'utf-8');
   console.log(`Sitemap generated at ${outputPath}`);
-  console.log(`Total URLs: ${products.length + 1}`);
+  console.log(`Total URLs: ${products.length + STATIC_PAGES.length}`);
 }
 
 main().catch(console.error);

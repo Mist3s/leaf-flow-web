@@ -19,6 +19,7 @@ import { AuthModal } from './components/AuthModal';
 import { createOrder, clearCart } from './api';
 import { CartItem } from './types/cart';
 import { ToastItem, ToastStack } from './components/Toast';
+import { updateSEO, SEO_PAGES } from './utils/seo';
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -56,19 +57,23 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Динамический title для SEO
+  // Динамическое SEO (title, description, canonical, OG)
   useEffect(() => {
-    const titles: Record<string, string> = {
-      home: 'Zavarka39 — Китайский чай в Калининграде | Купить чай с доставкой',
-      product: 'Zavarka39 — Китайский чай',
-      cart: 'Корзина — Zavarka39',
-      checkout: orderSummary ? 'Заказ оформлен — Zavarka39' : 'Оформление заказа — Zavarka39',
-      profile: 'Мой профиль — Zavarka39',
-      delivery: 'Доставка и оплата — Zavarka39',
-      privacy: 'Политика конфиденциальности — Zavarka39',
-      offer: 'Публичная оферта — Zavarka39',
-    };
-    document.title = titles[route.name] || 'Zavarka39';
+    const routeName = route.name as keyof typeof SEO_PAGES;
+    
+    if (routeName === 'checkout' && orderSummary) {
+      updateSEO({
+        title: 'Заказ оформлен — Zavarka39',
+        description: 'Ваш заказ успешно оформлен. Спасибо за покупку в интернет-магазине китайского чая Zavarka39.',
+        canonical: '/checkout',
+      });
+    } else if (SEO_PAGES[routeName]) {
+      updateSEO(SEO_PAGES[routeName]);
+    } else if (route.name === 'product') {
+      // Для страницы товара SEO обновляется в ProductPage
+    } else {
+      updateSEO(SEO_PAGES.home);
+    }
   }, [route.name, orderSummary]);
 
   // Скролл при переходе между страницами
