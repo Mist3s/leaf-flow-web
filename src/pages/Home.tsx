@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Search, Package, Loader2, Send, Smartphone, Phone } from 'lucide-react';
 import { listCategories, listProducts } from '../api';
 import { Product } from '../types/catalog';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, getImageUrl } from '../utils/format';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -291,7 +291,7 @@ export const Home: React.FC<Props> = ({ filters, onFiltersChange, onNavigate }) 
                 }}
               >
                 <div className="product-card__image-wrap">
-                  <img src={product.image} alt={product.name} loading="lazy" className="product-card__image" />
+                  <img src={getImageUrl(product.image)} alt={product.name} loading="lazy" className="product-card__image" />
                   {product.category && categoryMap.get(product.category) && (
                     <span className="product-card__category-badge">{categoryMap.get(product.category)}</span>
                   )}

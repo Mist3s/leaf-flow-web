@@ -3,7 +3,7 @@ import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Tag } fr
 import { getProduct, listCategories } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, getImageUrl } from '../utils/format';
 
 type Props = {
   id: string;
@@ -119,7 +119,7 @@ export const ProductPage: React.FC<Props> = ({ id, onNavigate, onAdd, onChangeQt
         {/* Image */}
         <div className="pdp-gallery">
           <div className="pdp-gallery__main">
-            <img src={product.image} alt={product.name} className="pdp-gallery__image" />
+            <img src={getImageUrl(product.image)} alt={product.name} className="pdp-gallery__image" />
             {product.category && categoryMap.get(product.category) && (
               <span className="pdp-gallery__category">{categoryMap.get(product.category)}</span>
             )}

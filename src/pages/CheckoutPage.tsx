@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, User, Phone, MapPin, MessageSquare, Store, Truck, Package, ShoppingBag, LogIn, CreditCard, CheckCircle2, AlertCircle, Headphones, Loader2 } from 'lucide-react';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, getImageUrl } from '../utils/format';
 import { CartItem } from '../types/cart';
 import { UserProfile } from '../types/auth';
 
@@ -416,7 +416,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
               {cart.items.map((item) => (
                 <div key={`${item.productId}:${item.variantId}`} className="checkout-summary__item">
                   <img
-                    src={item.image || placeholder}
+                    src={getImageUrl(item.image) || placeholder}
                     alt={item.productName}
                     className="checkout-summary__item-img"
                   />
