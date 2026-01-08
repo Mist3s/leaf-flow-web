@@ -14,7 +14,7 @@ type Props = {
   showSearch?: boolean;
   onSearchChange?: (value: string) => void;
   onToggleTheme: () => void;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, scrollToTop?: boolean) => void;
   onOpenAuth: () => void;
   onLogout: () => void;
 };
@@ -51,7 +51,7 @@ export const Header: React.FC<Props> = ({
   return (
     <header className="header">
       <div className="header__left">
-        <button className="header__brand" onClick={() => onNavigate('/')} aria-label="Главная">
+        <button className="header__brand" onClick={() => onNavigate('/', true)} aria-label="Главная">
           <img src="/logo.png" alt="Zavarka39" className="header__brand-logo" />
           <span className="header__brand-name">Zavarka39</span>
         </button>

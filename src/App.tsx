@@ -34,7 +34,7 @@ const App: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const prevRouteRef = useRef(route.name);
   const homeScrollRef = useRef(0);
-  const isRestoringScroll = useRef(false);
+  const forceScrollTopRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -45,13 +45,24 @@ const App: React.FC = () => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
       // Сохраняем позицию скролла для главной страницы
-      if (route.name === 'home' && !isRestoringScroll.current) {
+      if (route.name === 'home') {
         homeScrollRef.current = window.scrollY;
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [route.name]);
+
+  // Функция навигации с принудительным скроллом наверх (для логотипа)
+  const navigateToTop = (path: string) => {
+    if (path === '/' && route.name === 'home') {
+      // Уже на главной — просто скролл наверх
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      forceScrollTopRef.current = true;
+      navigate(path);
+    }
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -80,18 +91,23 @@ const App: React.FC = () => {
   useEffect(() => {
     const prevRoute = prevRouteRef.current;
     
-    // Восстанавливаем позицию при возврате на главную
-    if (route.name === 'home' && prevRoute !== 'home') {
-      isRestoringScroll.current = true;
-      requestAnimationFrame(() => {
-        window.scrollTo(0, homeScrollRef.current);
-        setTimeout(() => {
-          isRestoringScroll.current = false;
-        }, 100);
-      });
-    } else if (route.name !== 'home') {
-      // Скролл наверх для остальных страниц
-      window.scrollTo(0, 0);
+    if (route.name !== prevRoute) {
+      if (route.name === 'home') {
+        // При переходе на главную
+        if (forceScrollTopRef.current) {
+          // Клик на логотип — скролл наверх
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          forceScrollTopRef.current = false;
+        } else {
+          // Кнопка "назад" — восстанавливаем позицию
+          requestAnimationFrame(() => {
+            window.scrollTo(0, homeScrollRef.current);
+          });
+        }
+      } else {
+        // Переход на другие страницы — скролл наверх
+        window.scrollTo(0, 0);
+      }
     }
     
     prevRouteRef.current = route.name;
@@ -160,7 +176,7 @@ const App: React.FC = () => {
         user={auth.user}
         authLoading={auth.loading}
         onToggleTheme={toggleTheme}
-        onNavigate={navigate}
+        onNavigate={(path, scrollToTop) => scrollToTop ? navigateToTop(path) : navigate(path)}
         onOpenAuth={() => openAuth('login')}
         onLogout={() => {
           logout();
