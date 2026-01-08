@@ -573,6 +573,22 @@ a {
   color: var(--text-muted);
 }
 
+/* Hide native clear button for search inputs */
+.home-search__input::-webkit-search-cancel-button,
+.home-search__input::-webkit-search-decoration,
+.home-search__input::-webkit-search-results-button,
+.home-search__input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.home-search__input::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .home-search__clear {
   position: absolute;
   right: 0.75rem;
