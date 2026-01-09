@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send, ChevronRight } from 'lucide-react';
 import { UserProfile } from '../types/auth';
-
-const PROMO_KEY = 'promo_bar_dismissed';
-const TELEGRAM_APP_URL = 'https://t.me/zavarka39_bot?startapp';
+import { STORAGE_KEYS, TELEGRAM_APP_URL } from '../config';
 
 type Props = {
   theme: 'light' | 'dark';
@@ -35,7 +33,7 @@ export const Header: React.FC<Props> = memo(({
   const [promoVisible, setPromoVisible] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(PROMO_KEY);
+    const dismissed = localStorage.getItem(STORAGE_KEYS.PROMO_DISMISSED);
     if (!dismissed) {
       setPromoVisible(true);
     }
@@ -45,7 +43,7 @@ export const Header: React.FC<Props> = memo(({
     e.preventDefault();
     e.stopPropagation();
     setPromoVisible(false);
-    localStorage.setItem(PROMO_KEY, 'true');
+    localStorage.setItem(STORAGE_KEYS.PROMO_DISMISSED, 'true');
   }, []);
 
   const handleBrandClick = useCallback(() => {

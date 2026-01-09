@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { login, profile, register, setAuthTokens, getStoredTokens } from '../api';
-import { AuthTokens, UserProfile } from '../types/auth';
+import { login, profile, register, telegramLogin, setAuthTokens, getStoredTokens } from '../api';
+import { AuthTokens, UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
 
 type AuthState = {
   user: UserProfile | null;
@@ -65,10 +65,23 @@ export const useAuth = () => {
     }
   };
 
+  const doTelegramLogin = async (payload: TelegramLoginWidgetPayload) => {
+    setAuth((p) => ({ ...p, loading: true, error: null }));
+    try {
+      const res = await telegramLogin(payload);
+      setAuthTokens(res.tokens);
+      setAuth({ user: res.user, tokens: res.tokens, loading: false, error: null });
+    } catch (err: any) {
+      const message = err?.message || 'Ошибка авторизации через Telegram';
+      setAuth((p) => ({ ...p, loading: false, error: message }));
+      throw err;
+    }
+  };
+
   const logout = () => {
     setAuthTokens(null);
     setAuth({ user: null, tokens: null, loading: false, error: null });
   };
 
-  return { auth, doLogin, doRegister, logout };
+  return { auth, doLogin, doRegister, doTelegramLogin, logout };
 };

@@ -1,4 +1,4 @@
-const IMAGE_BASE_URL = 'https://app.zavarka39.ru';
+import { IMAGE_BASE_URL } from '../config';
 
 export const getImageUrl = (path: string | undefined): string => {
   if (!path) return '';

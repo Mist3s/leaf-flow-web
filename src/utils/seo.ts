@@ -1,3 +1,5 @@
+import { SITE_URL } from '../config';
+
 type SEOConfig = {
   title: string;
   description: string;
@@ -12,7 +14,7 @@ type SEOConfig = {
   breadcrumbs?: Array<{ name: string; url: string }>;
 };
 
-const BASE_URL = 'https://zavarka39.ru';
+const BASE_URL = SITE_URL;
 
 const defaultMeta = {
   title: 'Zavarka39 — Китайский чай в Калининграде | Купить чай с доставкой',

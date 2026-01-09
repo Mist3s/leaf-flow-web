@@ -1,10 +1,11 @@
-import { AuthResponse, AuthTokens, UserProfile } from './types/auth';
+import { AuthResponse, AuthTokens, UserProfile, TelegramLoginWidgetPayload } from './types/auth';
 import { CartResponse } from './types/cart';
 import { Category, Product, ProductListResponse } from './types/catalog';
 import { ReviewsData } from './types/reviews';
+import { API_BASE_URL, STORAGE_KEYS } from './config';
 
-const API_BASE = 'https://app.zavarka39.ru/api';
-const AUTH_KEY = 'zavarka-auth';
+const API_BASE = API_BASE_URL;
+const AUTH_KEY = STORAGE_KEYS.AUTH;
 
 let authTokens: AuthTokens | null = null;
 let isRefreshing = false;
@@ -192,6 +193,8 @@ export const register = (payload: { email: string; password: string; firstName: 
   request<AuthResponse>('/v1/auth/register', { method: 'POST', body: JSON.stringify(payload) });
 export const login = (payload: { email: string; password: string }) =>
   request<AuthResponse>('/v1/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+export const telegramLogin = (payload: TelegramLoginWidgetPayload) =>
+  request<AuthResponse>('/v1/auth/telegram/login-widget', { method: 'POST', body: JSON.stringify(payload) });
 export const profile = () => request<UserProfile>('/v1/auth/profile');
 
 // Мок-данные для отзывов (будет заменено на API-эндпоинт)

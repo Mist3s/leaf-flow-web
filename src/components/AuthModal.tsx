@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Mail, Lock, User, Sparkles } from 'lucide-react';
+import { TelegramLoginButton } from './TelegramLoginButton';
+import { TelegramLoginWidgetPayload } from '../types/auth';
+import { TELEGRAM_BOT_NAME } from '../config';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (payload: { email: string; password: string }) => Promise<void>;
   onRegister: (payload: { email: string; password: string; firstName: string; lastName?: string | null }) => Promise<void>;
+  onTelegramLogin?: (payload: TelegramLoginWidgetPayload) => Promise<void>;
   auth: { loading: boolean; error: string | null };
   initialMode?: 'login' | 'register';
 };
@@ -15,6 +19,7 @@ export const AuthModal: React.FC<Props> = ({
   onClose,
   onLogin,
   onRegister,
+  onTelegramLogin,
   auth,
   initialMode = 'login',
 }) => {
@@ -22,6 +27,7 @@ export const AuthModal: React.FC<Props> = ({
   const [form, setForm] = useState({ email: '', password: '', firstName: '', lastName: '' });
   const [error, setError] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +72,21 @@ export const AuthModal: React.FC<Props> = ({
       handleClose();
     }
   };
+
+  const handleTelegramAuth = useCallback(async (payload: TelegramLoginWidgetPayload) => {
+    if (!onTelegramLogin) return;
+    
+    setError(null);
+    setTelegramLoading(true);
+    try {
+      await onTelegramLogin(payload);
+      handleClose();
+    } catch (err) {
+      setError(auth.error || 'Не удалось войти через Telegram');
+    } finally {
+      setTelegramLoading(false);
+    }
+  }, [onTelegramLogin, auth.error]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +163,30 @@ export const AuthModal: React.FC<Props> = ({
         </div>
 
         <form className="modal__form" onSubmit={submit}>
+          {/* Telegram Login сверху для быстрого входа */}
+          {onTelegramLogin && mode === 'login' && (
+            <>
+              <div className="modal__telegram">
+                {telegramLoading ? (
+                  <div className="modal__telegram-loading">
+                    <span className="modal__spinner" />
+                    <span>Авторизация через Telegram...</span>
+                  </div>
+                ) : (
+                  <TelegramLoginButton
+                    botName={TELEGRAM_BOT_NAME}
+                    onAuth={handleTelegramAuth}
+                    buttonSize="large"
+                    cornerRadius={12}
+                  />
+                )}
+              </div>
+              <div className="modal__divider">
+                <span>или войдите по email</span>
+              </div>
+            </>
+          )}
+
           {mode === 'register' && (
             <>
               <div className="modal__field">
@@ -222,7 +267,7 @@ export const AuthModal: React.FC<Props> = ({
           <button
             className="modal__submit"
             type="submit"
-            disabled={auth.loading}
+            disabled={auth.loading || telegramLoading}
           >
             {auth.loading ? (
               <span className="modal__spinner" />

@@ -27,7 +27,7 @@ const OfferPage = lazy(() => import('./pages/OfferPage').then(m => ({ default: m
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
   const [route, navigate] = useRoute();
-  const { auth, doLogin, doRegister, logout } = useAuth();
+  const { auth, doLogin, doRegister, doTelegramLogin, logout } = useAuth();
   const { cart, addItem, changeQuantity, removeItem, reset } = useCart(Boolean(auth.tokens));
   const [filters, setFilters] = useState({ search: '', category: '' });
   const [orderSummary, setOrderSummary] = useState<{ orderId: string; customerName: string; deliveryMethod: string; total: string } | null>(null);
@@ -328,6 +328,7 @@ const App: React.FC = () => {
           onClose={closeAuth}
           onLogin={doLogin}
           onRegister={doRegister}
+          onTelegramLogin={doTelegramLogin}
           auth={auth}
           initialMode={authMode}
         />
