@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Tag } from 'lucide-react';
-import { getProduct, listCategories } from '../api';
+import { getProduct, listCategories, getReviews } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
+import { ReviewsData } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
+import { ReviewsBlock } from '../components/ReviewsBlock';
 
 type Props = {
   id: string;
@@ -55,6 +57,8 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categoryMap, setCategoryMap] = useState<Map<string, string>>(new Map());
+  const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Загрузка категорий
   useEffect(() => {
@@ -65,6 +69,16 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         setCategoryMap(map);
       })
       .catch(() => {});
+  }, []);
+
+  // Загрузка отзывов
+  useEffect(() => {
+    getReviews()
+      .then((data) => {
+        setReviewsData(data);
+        setReviewsLoading(false);
+      })
+      .catch(() => setReviewsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -312,6 +326,9 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
             <p className="pdp-description-section__text">{product.description}</p>
           </section>
         )}
+
+        {/* Reviews Block */}
+        <ReviewsBlock data={reviewsData} loading={reviewsLoading} />
       </div>
 
       {/* Mobile Fixed Bottom */}

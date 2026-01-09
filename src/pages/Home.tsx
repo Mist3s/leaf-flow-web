@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
 import { Search, Package, Loader2, Send, Smartphone, Phone } from 'lucide-react';
-import { listCategories, listProducts } from '../api';
+import { listCategories, listProducts, getReviews } from '../api';
 import { Product } from '../types/catalog';
+import { ReviewsData } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
+import { ReviewsCompact } from '../components/ReviewsCompact';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -118,6 +120,8 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
   const [products, setProducts] = useState<Product[]>(hasCachedData ? cache.products : []);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(cache.categories);
   const [loading, setLoading] = useState(!hasCachedData);
+  const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Маппинг id -> label для быстрого поиска
   const categoryMap = useMemo(() => {
@@ -144,6 +148,16 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
         cache.categories = items;
       })
       .catch(() => setCategories([]));
+  }, []);
+
+  // Загрузка отзывов
+  useEffect(() => {
+    getReviews()
+      .then((data) => {
+        setReviewsData(data);
+        setReviewsLoading(false);
+      })
+      .catch(() => setReviewsLoading(false));
   }, []);
 
   // Первичная загрузка при изменении фильтров
@@ -307,7 +321,8 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
           </aside>
         </div>
 
-        {/* Search */}
+        {/* Search + Reviews */}
+        <div className="home-search-row">
         <div className="home-search">
           <div className="home-search__input-wrap">
             <Search size={20} className="home-search__icon" />
@@ -324,6 +339,8 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
               </button>
             )}
           </div>
+          </div>
+          <ReviewsCompact data={reviewsData} loading={reviewsLoading} />
         </div>
       </section>
 

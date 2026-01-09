@@ -1,6 +1,7 @@
 import { AuthResponse, AuthTokens, UserProfile } from './types/auth';
 import { CartResponse } from './types/cart';
 import { Category, Product, ProductListResponse } from './types/catalog';
+import { ReviewsData } from './types/reviews';
 
 const API_BASE = 'https://app.zavarka39.ru/api';
 const AUTH_KEY = 'zavarka-auth';
@@ -192,3 +193,192 @@ export const register = (payload: { email: string; password: string; firstName: 
 export const login = (payload: { email: string; password: string }) =>
   request<AuthResponse>('/v1/auth/login', { method: 'POST', body: JSON.stringify(payload) });
 export const profile = () => request<UserProfile>('/v1/auth/profile');
+
+// Мок-данные для отзывов (будет заменено на API-эндпоинт)
+const mockReviewsData: ReviewsData = {
+  averageRating: 5.0,
+  totalReviews: 21,
+  platforms: [
+    { platform: 'yandex', rating: 0.0, reviewCount: 0, iconUrl: '/icon/yandex_icon.svg', reviewsUrl: 'https://yandex.ru/maps/org/zavarka39_kitayskiy_chay/136643377826?si=f6gx50r3r16h0uuh3qv5prfrk4' },
+    { platform: 'google', rating: 0.0, reviewCount: 0, iconUrl: '/icon/google_icon.svg', reviewsUrl: '#' },
+    { platform: 'telegram', rating: 5.0, reviewCount: 3, iconUrl: '/icon/tg_icon.svg', reviewsUrl: 'https://t.me/zavarka39_ru' },
+    { platform: 'avito', rating: 5.0, reviewCount: 18, iconUrl: '/icon/avito_icon.svg', reviewsUrl: 'https://www.avito.ru/brands/496c10b485c0cc17027cc587d150d0d1' },
+  ],
+  reviews: [
+    {
+      id: '1',
+      platform: 'avito',
+      author: 'Елена',
+      rating: 5,
+      text: 'Советую продавца, все чётко, чай хороший 👍',
+      date: '2026-01-03',
+    },
+    {
+      id: '2',
+      platform: 'avito',
+      author: 'Анастасия',
+      rating: 5,
+      text: 'Все отлично, спасибо',
+      date: '2025-12-27',
+    },
+    {
+      id: '3',
+      platform: 'avito',
+      author: 'Ирина Р.',
+      rating: 5,
+      text: 'Спасибо огромное\nСупер чай. Но брала в подарок, поэтому вкус оценить не могу. По запаху, понятно, что супер.\nСупер продавец. Отправил быстро, был всегда на связи. На сообщения отвечал быстро\nБлагодарю 🙏',
+      date: '2025-12-21',
+    },
+    {
+      id: '4',
+      platform: 'avito',
+      author: 'Сергей',
+      rating: 5,
+      text: 'Советую !',
+      date: '2025-12-08',
+    },
+    {
+      id: '5',
+      platform: 'avito',
+      author: 'Лаванда',
+      rating: 5,
+      text: 'Супер бодряк!!♥️♥️♥️',
+      date: '2025-10-22',
+    },
+    {
+      id: '6',
+      platform: 'avito',
+      author: 'Айрат',
+      rating: 5,
+      text: 'Всё отлично!',
+      date: '2025-09-13',
+    },
+    {
+      id: '7',
+      platform: 'avito',
+      author: 'Максим С.',
+      rating: 5,
+      text: 'Все хорошо,товар в порядке,ещё и на пробу несколько других сортов чая прислали.',
+      date: '2025-05-31',
+    },
+    {
+      id: '8',
+      platform: 'avito',
+      author: 'Carattere',
+      rating: 5,
+      text: 'Спасибо😊Всё прошло хорошо\nИ подарочки положили😘',
+      date: '2025-05-08',
+    },
+    {
+      id: '9',
+      platform: 'avito',
+      author: 'Вячеслав В.',
+      rating: 5,
+      text: 'Прекрасный продавец, прекрасный товар, рекомендую!',
+      date: '2025-03-28',
+    },
+    {
+      id: '10',
+      platform: 'avito',
+      author: 'Александр К.',
+      rating: 5,
+      text: 'Хороший продавец',
+      date: '2025-02-10',
+    },
+    {
+      id: '11',
+      platform: 'avito',
+      author: 'Владимир',
+      rating: 5,
+      text: 'Рекомендую продавца 👍\nПродукт соответствует действительности\nПродавец доброжелателен',
+      date: '2025-01-27',
+    },
+    {
+      id: '12',
+      platform: 'avito',
+      author: 'Сергей',
+      rating: 5,
+      text: 'Чай просто великолепный, энергия ЦИ ощущается очень мягко, приятно и полезно!) Продавец описал, как правильно пить и заваривать чай, чтоб получить максимум пользы. Очень душевный продавец, понравилось общение, подход к покупателю и сам продукт!)',
+      date: '2025-01-18',
+    },
+    {
+      id: '13',
+      platform: 'avito',
+      author: 'Наталья',
+      rating: 5,
+      text: 'Шикарный, насыщенный и ароматный чай! Очень компетентный продавец, все подсказал и рассказал, приятно иметь дело! Однозначно рекомендую!',
+      date: '2024-10-26',
+    },
+    {
+      id: '14',
+      platform: 'avito',
+      author: 'Павел',
+      rating: 5,
+      text: 'Всё отлично.Чай хороший👍',
+      date: '2024-10-16',
+    },
+    {
+      id: '15',
+      platform: 'avito',
+      author: 'Руслан',
+      rating: 5,
+      text: 'Товар соответствует. Плюс подарок на пробу. Обязательно обращусь ещё 👍',
+      date: '2024-08-19',
+    },
+    {
+      id: '16',
+      platform: 'avito',
+      author: 'Покупатель',
+      rating: 5,
+      text: 'Хороший вежливый продавец. \nХороший чай.\nСписались, договорились. В назначенное время подъехала и встретились. \nВсе понравилось. Буду брать еще.',
+      date: '2024-08-10',
+    },
+    {
+      id: '17',
+      platform: 'avito',
+      author: 'Ангелина',
+      rating: 5,
+      text: 'Спасибо большое, габа обалденная, обязательно буду покупать ещё ♥️\nОчень приятно было общаться, продавец общительный и внимательный 😊',
+      date: '2024-07-02',
+    },
+    {
+      id: '18',
+      platform: 'avito',
+      author: 'JuD',
+      rating: 5,
+      text: 'Благодарю, чай зашёл ❤️ обязательно будем обращаться 🌞🙏👍',
+      date: '2024-05-07',
+    },
+    {
+      id: '19',
+      platform: 'telegram',
+      author: 'Леночка',
+      rating: 5,
+      text: 'Чай великолепного качества, продавцы очень грамотные, знающие свое дело.',
+      date: '2025-03-26',
+    },
+    {
+      id: '20',
+      platform: 'telegram',
+      author: 'Сергей Д.',
+      rating: 5,
+      text: '🔥',
+      date: '2025-05-03',
+    },
+    {
+      id: '21',
+      platform: 'telegram',
+      author: 'Татьяна И.',
+      rating: 5,
+      text: 'Чай просто бомбический👍👏🙏',
+      date: '2025-10-11',
+    },
+  ],
+};
+
+export const getReviews = (): Promise<ReviewsData> => {
+  // TODO: Заменить на реальный API-эндпоинт
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(mockReviewsData), 300);
+  });
+};
