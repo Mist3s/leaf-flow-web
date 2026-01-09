@@ -195,6 +195,45 @@ export const login = (payload: { email: string; password: string }) =>
   request<AuthResponse>('/v1/auth/login', { method: 'POST', body: JSON.stringify(payload) });
 export const telegramLogin = (payload: TelegramLoginWidgetPayload) =>
   request<AuthResponse>('/v1/auth/telegram/login-widget', { method: 'POST', body: JSON.stringify(payload) });
+
+// Telegram Link/Unlink/Merge
+export const telegramLink = async (payload: TelegramLoginWidgetPayload): Promise<{ user?: UserProfile; conflict?: boolean; error?: string }> => {
+  const tokens = getActiveTokens();
+  const res = await fetch(`${API_BASE}/v1/auth/telegram/link`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(tokens?.accessToken ? { Authorization: `Bearer ${tokens.accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  
+  if (res.status === 409) {
+    // Conflict — telegram уже привязан к другому аккаунту
+    return { conflict: true };
+  }
+  
+  if (!res.ok) {
+    const text = await res.text();
+    let message = res.statusText;
+    try {
+      const json = JSON.parse(text);
+      message = json.detail || json.message || json.error || text;
+    } catch {
+      message = text || res.statusText;
+    }
+    return { error: message };
+  }
+  
+  return { user: await res.json() };
+};
+
+export const telegramUnlink = () =>
+  request<UserProfile>('/v1/auth/telegram/link', { method: 'DELETE' });
+
+export const telegramMerge = (payload: TelegramLoginWidgetPayload) =>
+  request<UserProfile>('/v1/auth/telegram/merge', { method: 'POST', body: JSON.stringify(payload) });
+
 export const profile = () => request<UserProfile>('/v1/auth/profile');
 
 // Мок-данные для отзывов (будет заменено на API-эндпоинт)

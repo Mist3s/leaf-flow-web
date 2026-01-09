@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { login, profile, register, telegramLogin, setAuthTokens, getStoredTokens } from '../api';
+import { useEffect, useState, useCallback } from 'react';
+import { login, profile, register, telegramLogin, telegramLink, telegramUnlink, telegramMerge, setAuthTokens, getStoredTokens } from '../api';
 import { AuthTokens, UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
 
 type AuthState = {
@@ -78,10 +78,67 @@ export const useAuth = () => {
     }
   };
 
+  // Обновить профиль пользователя в состоянии
+  const updateUser = useCallback((user: UserProfile) => {
+    setAuth((p) => ({ ...p, user }));
+  }, []);
+
+  // Привязать Telegram к текущему аккаунту
+  const doTelegramLink = useCallback(async (payload: TelegramLoginWidgetPayload): Promise<{ success?: boolean; conflict?: boolean; error?: string }> => {
+    const result = await telegramLink(payload);
+    
+    if (result.conflict) {
+      return { conflict: true };
+    }
+    
+    if (result.error) {
+      return { error: result.error };
+    }
+    
+    if (result.user) {
+      updateUser(result.user);
+      return { success: true };
+    }
+    
+    return { error: 'Неизвестная ошибка' };
+  }, [updateUser]);
+
+  // Отвязать Telegram от аккаунта
+  const doTelegramUnlink = useCallback(async (): Promise<{ success?: boolean; error?: string }> => {
+    try {
+      const user = await telegramUnlink();
+      updateUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { error: err?.message || 'Не удалось отвязать Telegram' };
+    }
+  }, [updateUser]);
+
+  // Объединить аккаунты (после 409 Conflict)
+  const doTelegramMerge = useCallback(async (payload: TelegramLoginWidgetPayload): Promise<{ success?: boolean; error?: string }> => {
+    try {
+      const user = await telegramMerge(payload);
+      updateUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { error: err?.message || 'Не удалось объединить аккаунты' };
+    }
+  }, [updateUser]);
+
   const logout = () => {
     setAuthTokens(null);
     setAuth({ user: null, tokens: null, loading: false, error: null });
   };
 
-  return { auth, doLogin, doRegister, doTelegramLogin, logout };
+  return { 
+    auth, 
+    doLogin, 
+    doRegister, 
+    doTelegramLogin, 
+    doTelegramLink,
+    doTelegramUnlink,
+    doTelegramMerge,
+    updateUser,
+    logout 
+  };
 };

@@ -1,8 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, AtSign } from 'lucide-react';
-import { UserProfile } from '../types/auth';
+import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, Send, Link2, Unlink, AlertTriangle } from 'lucide-react';
+import { UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
 import { listOrders, getOrder, OrderListItem, OrderDetails } from '../api';
 import { formatCurrency } from '../utils/format';
+import { TelegramLoginButton } from '../components/TelegramLoginButton';
+import { TELEGRAM_BOT_NAME } from '../config';
+
+type ToastPayload = {
+  tone: 'success' | 'warning' | 'error';
+  message: string;
+};
 
 type Props = {
   user: UserProfile | null;
@@ -10,6 +17,10 @@ type Props = {
   onNavigate: (path: string) => void;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onShowToast?: (toast: ToastPayload) => void;
+  onTelegramLink?: (payload: TelegramLoginWidgetPayload) => Promise<{ success?: boolean; conflict?: boolean; error?: string }>;
+  onTelegramUnlink?: () => Promise<{ success?: boolean; error?: string }>;
+  onTelegramMerge?: (payload: TelegramLoginWidgetPayload) => Promise<{ success?: boolean; error?: string }>;
 };
 
 const ORDERS_PER_PAGE = 6;
@@ -39,13 +50,109 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-export const ProfilePage: React.FC<Props> = ({ user, authLoading = false, onNavigate, onOpenAuth, onLogout }) => {
+export const ProfilePage: React.FC<Props> = ({ 
+  user, 
+  authLoading = false, 
+  onNavigate, 
+  onOpenAuth, 
+  onLogout,
+  onShowToast,
+  onTelegramLink,
+  onTelegramUnlink,
+  onTelegramMerge,
+}) => {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+
+  // Telegram link states
+  const [tgLoading, setTgLoading] = useState(false);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [pendingTgPayload, setPendingTgPayload] = useState<TelegramLoginWidgetPayload | null>(null);
+  const [showTgWidget, setShowTgWidget] = useState(false);
+
+  const isTelegramLinked = Boolean(user?.telegramId);
+  const canUnlink = isTelegramLinked && Boolean(user?.email);
+
+  const handleTelegramAuth = useCallback(async (payload: TelegramLoginWidgetPayload) => {
+    if (!onTelegramLink) return;
+    
+    // Сразу закрываем popup после получения данных от виджета
+    setShowTgWidget(false);
+    setTgLoading(true);
+
+    try {
+      const result = await onTelegramLink(payload);
+      if (result.conflict) {
+        setPendingTgPayload(payload);
+        setShowMergeDialog(true);
+        setTgLoading(false);
+        return;
+      }
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        setTgLoading(false);
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Telegram успешно привязан!' });
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось привязать Telegram' });
+    } finally {
+      setTgLoading(false);
+    }
+  }, [onTelegramLink, onShowToast]);
+
+  const handleTelegramUnlink = useCallback(async () => {
+    if (!onTelegramUnlink || !canUnlink) return;
+    setTgLoading(true);
+
+    try {
+      const result = await onTelegramUnlink();
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Telegram отвязан' });
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось отвязать Telegram' });
+    } finally {
+      setTgLoading(false);
+    }
+  }, [onTelegramUnlink, canUnlink, onShowToast]);
+
+  const handleMergeConfirm = useCallback(async () => {
+    if (!pendingTgPayload || !onTelegramMerge) return;
+    setTgLoading(true);
+
+    try {
+      const result = await onTelegramMerge(pendingTgPayload);
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Аккаунты успешно объединены!' });
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось объединить аккаунты' });
+    } finally {
+      setTgLoading(false);
+      setShowMergeDialog(false);
+      setPendingTgPayload(null);
+    }
+  }, [pendingTgPayload, onTelegramMerge, onShowToast]);
+
+  const handleMergeCancel = useCallback(() => {
+    setShowMergeDialog(false);
+    setPendingTgPayload(null);
+  }, []);
 
   const loadOrders = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -107,19 +214,15 @@ export const ProfilePage: React.FC<Props> = ({ user, authLoading = false, onNavi
     );
   }
 
-  const initials = `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+  const initials = user.firstName.charAt(0).toUpperCase();
 
   return (
     <div className="profile">
       {/* Шапка профиля */}
       <header className="profile-header">
-        <div className="profile-header__left">
+        <div className="profile-header__main">
           <div className="profile-avatar">
-            {user.photoUrl ? (
-              <img src={user.photoUrl} alt={user.firstName} />
-            ) : (
-              <span>{initials}</span>
-            )}
+            <span>{initials}</span>
           </div>
           <div className="profile-info">
             <h1 className="profile-name">
@@ -132,11 +235,31 @@ export const ProfilePage: React.FC<Props> = ({ user, authLoading = false, onNavi
                   {user.email}
                 </span>
               )}
-              {user.username && (
-                <span className="profile-meta__item">
-                  <AtSign size={14} />
-                  {user.username}
+              {/* Telegram статус inline */}
+              {isTelegramLinked ? (
+                <span className="profile-meta__item profile-meta__item--tg">
+                  <Send size={14} />
+                  @{user.username || 'Telegram'}
+                  {canUnlink && onTelegramUnlink && (
+                    <button
+                      className="profile-meta__tg-unlink"
+                      onClick={handleTelegramUnlink}
+                      disabled={tgLoading}
+                      title="Отвязать Telegram"
+                    >
+                      <Unlink size={12} />
+                    </button>
+                  )}
                 </span>
+              ) : onTelegramLink && (
+                <button
+                  className="profile-meta__item profile-meta__item--tg-link"
+                  onClick={() => setShowTgWidget(true)}
+                  disabled={tgLoading}
+                >
+                  <Send size={14} />
+                  Привязать Telegram
+                </button>
               )}
             </div>
           </div>
@@ -146,6 +269,63 @@ export const ProfilePage: React.FC<Props> = ({ user, authLoading = false, onNavi
           <span>Выйти</span>
         </button>
       </header>
+
+      {/* Telegram Widget Popup */}
+      {showTgWidget && onTelegramLink && (
+        <div className="tg-widget-popup-backdrop" onClick={() => setShowTgWidget(false)}>
+          <div className="tg-widget-popup" onClick={(e) => e.stopPropagation()}>
+            <button className="tg-widget-popup__close" onClick={() => setShowTgWidget(false)}>
+              <X size={18} />
+            </button>
+            <div className="tg-widget-popup__icon">
+              <Send size={24} />
+            </div>
+            <h4 className="tg-widget-popup__title">Привязать Telegram</h4>
+            <p className="tg-widget-popup__text">
+              Для быстрого входа и уведомлений о заказах
+            </p>
+            <div className="tg-widget-popup__widget">
+              {tgLoading ? (
+                <div className="tg-widget-popup__loading">
+                  <Loader2 size={24} className="spinner" />
+                </div>
+              ) : (
+                <TelegramLoginButton
+                  botName={TELEGRAM_BOT_NAME}
+                  onAuth={handleTelegramAuth}
+                  buttonSize="large"
+                  cornerRadius={12}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Диалог слияния аккаунтов */}
+      {showMergeDialog && (
+        <div className="merge-dialog-backdrop" onClick={handleMergeCancel}>
+          <div className="merge-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="merge-dialog__icon">
+              <AlertTriangle size={32} />
+            </div>
+            <h4 className="merge-dialog__title">Telegram уже используется</h4>
+            <p className="merge-dialog__text">
+              Этот Telegram привязан к другому аккаунту. Объединить аккаунты? Заказы будут перенесены.
+            </p>
+            <div className="merge-dialog__actions">
+              <button className="merge-dialog__btn merge-dialog__btn--cancel" onClick={handleMergeCancel} disabled={tgLoading}>
+                <X size={16} />
+                Отмена
+              </button>
+              <button className="merge-dialog__btn merge-dialog__btn--confirm" onClick={handleMergeConfirm} disabled={tgLoading}>
+                {tgLoading ? <Loader2 size={16} className="spinner" /> : <Link2 size={16} />}
+                Объединить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Заказы */}
       <section className="profile-orders">

@@ -13,6 +13,8 @@ export type UserProfile = {
   username?: string | null;
   photoUrl?: string | null;
   telegramId?: number | null;
+  /** Есть ли у пользователя установленный пароль (для проверки возможности отвязки TG) */
+  hasPassword?: boolean;
 };
 
 export type AuthResponse = {

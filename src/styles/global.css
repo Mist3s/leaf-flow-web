@@ -1322,7 +1322,7 @@ a {
   border: 1px solid var(--border);
 }
 
-.profile-header__left {
+.profile-header__main {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1377,6 +1377,144 @@ a {
   color: var(--text-muted);
 }
 
+.profile-meta__item--tg {
+  color: #0088cc;
+  gap: 0.35rem;
+}
+
+.profile-meta__tg-unlink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 0.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.profile-meta__tg-unlink:hover:not(:disabled) {
+  opacity: 1;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.profile-meta__item--tg-link {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  margin: -0.35rem 0;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #0088cc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.profile-meta__item--tg-link:hover:not(:disabled) {
+  border-color: #0088cc;
+  background: rgba(0, 136, 204, 0.05);
+}
+
+.profile-meta__item--tg-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Telegram Widget Popup */
+.tg-widget-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.tg-widget-popup {
+  position: relative;
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.tg-widget-popup__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tg-widget-popup__close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.tg-widget-popup__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: rgba(0, 136, 204, 0.1);
+  color: #0088cc;
+}
+
+.tg-widget-popup__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.tg-widget-popup__text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+}
+
+.tg-widget-popup__widget {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.tg-widget-popup__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0088cc;
+}
+
 .profile-logout {
   display: flex;
   align-items: center;
@@ -1396,6 +1534,98 @@ a {
 .profile-logout:hover {
   background: #dc2626;
   color: #fff;
+}
+
+/* Merge Dialog */
+.merge-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.merge-dialog {
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.merge-dialog__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.merge-dialog__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  color: var(--text);
+}
+
+.merge-dialog__text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.merge-dialog__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.merge-dialog__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.merge-dialog__btn--cancel {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.merge-dialog__btn--cancel:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.merge-dialog__btn--confirm {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.merge-dialog__btn--confirm:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.merge-dialog__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Orders Section */
@@ -1807,7 +2037,7 @@ a {
     padding: 1rem;
   }
 
-  .profile-header__left {
+  .profile-header__main {
     flex-direction: column;
     text-align: center;
   }
