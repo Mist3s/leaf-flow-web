@@ -234,11 +234,6 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
           {/* Title */}
           <h1 className="pdp-title">{product.name}</h1>
 
-          {/* Description */}
-          {product.description && (
-            <p className="pdp-description">{product.description}</p>
-          )}
-
           {/* Variants */}
           <div className="pdp-variants">
             <span className="pdp-variants__label">Выберите упаковку</span>
@@ -309,6 +304,14 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
             </div>
           )}
         </div>
+
+        {/* Description - full width section */}
+        {product.description && (
+          <section className="pdp-description-section">
+            <h2 className="pdp-description-section__title">Описание</h2>
+            <p className="pdp-description-section__text">{product.description}</p>
+          </section>
+        )}
       </div>
 
       {/* Mobile Fixed Bottom */}

@@ -4379,8 +4379,7 @@ a {
 
 /* Gallery */
 .pdp-gallery {
-  position: sticky;
-  top: 1rem;
+  align-self: start;
 }
 
 .pdp-gallery__main {
@@ -4452,6 +4451,31 @@ a {
   font-size: 1rem;
   line-height: 1.7;
   color: var(--text-muted);
+}
+
+/* Description full-width section */
+.pdp-description-section {
+  grid-column: 1 / -1;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-top: 0.5rem;
+}
+
+.pdp-description-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pdp-description-section__text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  white-space: pre-line;
 }
 
 /* Variants */
@@ -4694,7 +4718,7 @@ a {
 
 @media (max-width: 720px) {
   .pdp {
-    padding: 0 1rem 5.5rem;
+    padding-bottom: 5.5rem;
   }
 
   .pdp-back {
@@ -4709,6 +4733,19 @@ a {
 
   .pdp-title {
     font-size: 1.5rem;
+  }
+
+  .pdp-description-section {
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .pdp-description-section__title {
+    font-size: 1rem;
+  }
+
+  .pdp-description-section__text {
+    font-size: 0.95rem;
   }
 
   .pdp-variants {
@@ -4839,11 +4876,6 @@ a {
     gap: 3rem;
   }
 
-  .pdp-gallery {
-    position: sticky;
-    top: 2rem;
-  }
-
   .pdp-title {
     font-size: 2.25rem;
   }
@@ -4933,6 +4965,13 @@ a {
 }
 
 @media (max-width: 768px) {
+  /* Footer padding when fixed bottom bar is present */
+  .page:has(.pdp-mobile-bar) ~ .footer,
+  .page:has(.cart-mobile-bar) ~ .footer,
+  .page:has(.checkout-mobile-submit) ~ .footer {
+    padding-bottom: 4rem;
+  }
+
   .footer__main {
     flex-direction: column;
     gap: 1rem;
