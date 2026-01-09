@@ -341,20 +341,26 @@ a {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.6rem 0.85rem;
+  padding: 0.6rem 0.65rem 0.6rem 0.85rem;
   border-radius: 10px;
-  border: 1px dashed var(--border);
-  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.08), rgba(45, 138, 54, 0.03));
   color: var(--text);
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .header__user:hover {
-  background: var(--surface);
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.15), rgba(45, 138, 54, 0.08));
   border-color: var(--primary);
+  transform: translateX(2px);
+}
+
+.header__user:hover .header__user-arrow {
+  transform: translateX(2px);
+  color: var(--primary);
 }
 
 .header__user-name {
@@ -362,6 +368,12 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.header__user-arrow {
+  color: var(--text-muted);
+  transition: transform 0.15s ease, color 0.15s ease;
+  margin-left: 0.1rem;
 }
 
 .header__cart {
@@ -3949,7 +3961,8 @@ a {
     padding: 0.55rem;
   }
 
-  .header__user-name {
+  .header__user-name,
+  .header__user-arrow {
     display: none;
   }
 

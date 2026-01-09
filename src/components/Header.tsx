@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send } from 'lucide-react';
+import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send, ChevronRight } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 
 const PROMO_KEY = 'promo_bar_dismissed';
@@ -125,9 +125,10 @@ export const Header: React.FC<Props> = memo(({
             <Loader2 size={18} className="header__auth-spinner" />
           </div>
         ) : user ? (
-          <button className="header__user" onClick={handleProfileClick}>
+          <button className="header__user" onClick={handleProfileClick} title="Перейти в личный кабинет">
             <UserRound size={16} />
             <span className="header__user-name">{user.firstName || 'Профиль'}</span>
+            <ChevronRight size={14} className="header__user-arrow" />
           </button>
         ) : (
           <button className="header__action header__action--login" onClick={onOpenAuth}>
