@@ -6,6 +6,7 @@ import { CartItem } from '../types/cart';
 import { ReviewsData } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
+import { MarkdownContent } from '../components/MarkdownContent';
 import { ReviewsBlock } from '../components/ReviewsBlock';
 
 type Props = {
@@ -323,7 +324,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         {product.description && (
           <section className="pdp-description-section">
             <h2 className="pdp-description-section__title">Описание</h2>
-            <p className="pdp-description-section__text">{product.description}</p>
+            <MarkdownContent content={product.description} className="pdp-description-section__content" />
           </section>
         )}
 

@@ -80,6 +80,7 @@ export const ProfilePage: React.FC<Props> = ({
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [pendingTgPayload, setPendingTgPayload] = useState<TelegramLoginWidgetPayload | null>(null);
   const [showTgWidget, setShowTgWidget] = useState(false);
+  const [showUnlinkDialog, setShowUnlinkDialog] = useState(false);
 
   // Settings states
   const [editingProfile, setEditingProfile] = useState(false);
@@ -130,7 +131,13 @@ export const ProfilePage: React.FC<Props> = ({
     }
   }, [onTelegramLink, onShowToast]);
 
-  const handleTelegramUnlink = useCallback(async () => {
+  // Открыть диалог подтверждения отвязки
+  const openUnlinkDialog = useCallback(() => {
+    setShowUnlinkDialog(true);
+  }, []);
+
+  // Подтвердить отвязку Telegram
+  const handleTelegramUnlinkConfirm = useCallback(async () => {
     if (!onTelegramUnlink || !canUnlink) return;
     setTgLoading(true);
 
@@ -142,6 +149,7 @@ export const ProfilePage: React.FC<Props> = ({
       }
       if (result.success) {
         onShowToast?.({ tone: 'success', message: 'Telegram отвязан' });
+        setShowUnlinkDialog(false);
       }
     } catch (err: any) {
       onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось отвязать Telegram' });
@@ -394,7 +402,7 @@ export const ProfilePage: React.FC<Props> = ({
                   {canUnlink && onTelegramUnlink && (
                     <button
                       className="profile-meta__tg-unlink"
-                      onClick={handleTelegramUnlink}
+                      onClick={openUnlinkDialog}
                       disabled={tgLoading}
                       title="Отвязать Telegram"
                     >
@@ -500,6 +508,31 @@ export const ProfilePage: React.FC<Props> = ({
               <button className="merge-dialog__btn merge-dialog__btn--confirm" onClick={handleMergeConfirm} disabled={tgLoading}>
                 {tgLoading ? <Loader2 size={16} className="spinner" /> : <Link2 size={16} />}
                 Объединить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Диалог подтверждения отвязки Telegram */}
+      {showUnlinkDialog && (
+        <div className="merge-dialog-backdrop" onClick={() => !tgLoading && setShowUnlinkDialog(false)}>
+          <div className="merge-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="merge-dialog__icon merge-dialog__icon--warning">
+              <Unlink size={32} />
+            </div>
+            <h4 className="merge-dialog__title">Отвязать Telegram?</h4>
+            <p className="merge-dialog__text">
+              После отвязки вы не сможете входить через Telegram. Для входа используйте email и пароль.
+            </p>
+            <div className="merge-dialog__actions">
+              <button className="merge-dialog__btn merge-dialog__btn--cancel" onClick={() => setShowUnlinkDialog(false)} disabled={tgLoading}>
+                <X size={16} />
+                Отмена
+              </button>
+              <button className="merge-dialog__btn merge-dialog__btn--danger" onClick={handleTelegramUnlinkConfirm} disabled={tgLoading}>
+                {tgLoading ? <Loader2 size={16} className="spinner" /> : <Unlink size={16} />}
+                Отвязать
               </button>
             </div>
           </div>
