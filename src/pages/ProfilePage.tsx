@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, Send, Link2, Unlink, AlertTriangle } from 'lucide-react';
+import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, Send, Link2, Unlink, AlertTriangle, Edit3, Lock, Eye, EyeOff, Check } from 'lucide-react';
 import { UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
-import { listOrders, getOrder, OrderListItem, OrderDetails } from '../api';
+import { listOrders, getOrder, OrderListItem, OrderDetails, UpdateProfilePayload, ChangePasswordPayload, SetEmailPayload } from '../api';
 import { formatCurrency } from '../utils/format';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
 import { TELEGRAM_BOT_NAME } from '../config';
 
 type ToastPayload = {
-  tone: 'success' | 'warning' | 'error';
+  tone: 'success' | 'warning' | 'error' | 'info';
   message: string;
+  actions?: { label: string; onClick: () => void }[];
 };
 
 type Props = {
@@ -21,6 +22,9 @@ type Props = {
   onTelegramLink?: (payload: TelegramLoginWidgetPayload) => Promise<{ success?: boolean; conflict?: boolean; error?: string }>;
   onTelegramUnlink?: () => Promise<{ success?: boolean; error?: string }>;
   onTelegramMerge?: (payload: TelegramLoginWidgetPayload) => Promise<{ success?: boolean; error?: string }>;
+  onUpdateProfile?: (payload: UpdateProfilePayload) => Promise<{ success?: boolean; error?: string }>;
+  onChangePassword?: (payload: ChangePasswordPayload) => Promise<{ success?: boolean; error?: string }>;
+  onSetEmail?: (payload: SetEmailPayload) => Promise<{ success?: boolean; error?: string }>;
 };
 
 const ORDERS_PER_PAGE = 6;
@@ -60,6 +64,9 @@ export const ProfilePage: React.FC<Props> = ({
   onTelegramLink,
   onTelegramUnlink,
   onTelegramMerge,
+  onUpdateProfile,
+  onChangePassword,
+  onSetEmail,
 }) => {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +80,22 @@ export const ProfilePage: React.FC<Props> = ({
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [pendingTgPayload, setPendingTgPayload] = useState<TelegramLoginWidgetPayload | null>(null);
   const [showTgWidget, setShowTgWidget] = useState(false);
+
+  // Settings states
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', email: '' });
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const [showSetEmailForm, setShowSetEmailForm] = useState(false);
+  const [setEmailForm, setSetEmailForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [setEmailLoading, setSetEmailLoading] = useState(false);
+  const [showSetEmailPassword, setShowSetEmailPassword] = useState(false);
 
   const isTelegramLinked = Boolean(user?.telegramId);
   const canUnlink = isTelegramLinked && Boolean(user?.email);
@@ -153,6 +176,134 @@ export const ProfilePage: React.FC<Props> = ({
     setShowMergeDialog(false);
     setPendingTgPayload(null);
   }, []);
+
+  // Начать редактирование профиля
+  const startEditingProfile = useCallback(() => {
+    if (!user) return;
+    setProfileForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+    });
+    setEditingProfile(true);
+  }, [user]);
+
+  // Сохранить изменения профиля
+  const handleSaveProfile = useCallback(async () => {
+    if (!onUpdateProfile || !user) return;
+    
+    // Собираем только изменённые поля
+    const payload: UpdateProfilePayload = {};
+    if (profileForm.firstName !== user.firstName) payload.firstName = profileForm.firstName;
+    if (profileForm.lastName !== (user.lastName || '')) payload.lastName = profileForm.lastName || null;
+    if (profileForm.email !== (user.email || '')) payload.email = profileForm.email;
+    
+    if (Object.keys(payload).length === 0) {
+      setEditingProfile(false);
+      return;
+    }
+    
+    setProfileLoading(true);
+    try {
+      const result = await onUpdateProfile(payload);
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Профиль обновлён' });
+        setEditingProfile(false);
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось обновить профиль' });
+    } finally {
+      setProfileLoading(false);
+    }
+  }, [onUpdateProfile, user, profileForm, onShowToast]);
+
+  // Изменение пароля (для пользователей с email)
+  const handleChangePassword = useCallback(async () => {
+    if (!onChangePassword) return;
+    
+    if (!passwordForm.currentPassword) {
+      onShowToast?.({ tone: 'error', message: 'Введите текущий пароль' });
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 8) {
+      onShowToast?.({ tone: 'error', message: 'Пароль должен содержать минимум 8 символов' });
+      return;
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      onShowToast?.({ tone: 'error', message: 'Пароли не совпадают' });
+      return;
+    }
+    
+    setPasswordLoading(true);
+    try {
+      const payload: ChangePasswordPayload = {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      };
+      
+      const result = await onChangePassword(payload);
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Пароль изменён' });
+        setShowPasswordForm(false);
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось изменить пароль' });
+    } finally {
+      setPasswordLoading(false);
+    }
+  }, [onChangePassword, passwordForm, onShowToast]);
+
+  // Установка email для Telegram-пользователей
+  const handleSetEmail = useCallback(async () => {
+    if (!onSetEmail) return;
+    
+    if (!setEmailForm.email) {
+      onShowToast?.({ tone: 'error', message: 'Введите email' });
+      return;
+    }
+    
+    if (setEmailForm.password.length < 8) {
+      onShowToast?.({ tone: 'error', message: 'Пароль должен содержать минимум 8 символов' });
+      return;
+    }
+    
+    if (setEmailForm.password !== setEmailForm.confirmPassword) {
+      onShowToast?.({ tone: 'error', message: 'Пароли не совпадают' });
+      return;
+    }
+    
+    setSetEmailLoading(true);
+    try {
+      const result = await onSetEmail({
+        email: setEmailForm.email,
+        password: setEmailForm.password,
+      });
+      if (result.error) {
+        onShowToast?.({ tone: 'error', message: result.error });
+        return;
+      }
+      if (result.success) {
+        onShowToast?.({ tone: 'success', message: 'Email установлен! Теперь вы можете входить по email' });
+        setShowSetEmailForm(false);
+        setSetEmailForm({ email: '', password: '', confirmPassword: '' });
+      }
+    } catch (err: any) {
+      onShowToast?.({ tone: 'error', message: err?.message || 'Не удалось установить email' });
+    } finally {
+      setSetEmailLoading(false);
+    }
+  }, [onSetEmail, setEmailForm, onShowToast]);
 
   const loadOrders = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -264,10 +415,38 @@ export const ProfilePage: React.FC<Props> = ({
             </div>
           </div>
         </div>
-        <button className="profile-logout" onClick={onLogout}>
-          <LogOut size={18} />
-          <span>Выйти</span>
-        </button>
+
+        {/* Кнопки действий */}
+        <div className="profile-header__actions">
+          {/* Редактировать профиль */}
+          {onUpdateProfile && (
+            <button className="profile-action-btn" onClick={startEditingProfile} title="Редактировать профиль">
+              <Edit3 size={16} />
+              <span>Редактировать</span>
+            </button>
+          )}
+
+          {/* Для пользователей с email — изменить пароль */}
+          {user.email && onChangePassword && (
+            <button className="profile-action-btn" onClick={() => setShowPasswordForm(true)} title="Изменить пароль">
+              <Lock size={16} />
+              <span>Пароль</span>
+            </button>
+          )}
+
+          {/* Для Telegram-пользователей без email — добавить email */}
+          {!user.email && onSetEmail && (
+            <button className="profile-action-btn profile-action-btn--accent" onClick={() => setShowSetEmailForm(true)} title="Добавить email для входа">
+              <Mail size={16} />
+              <span>Добавить Email</span>
+            </button>
+          )}
+
+          <button className="profile-action-btn profile-action-btn--danger" onClick={onLogout} title="Выйти из аккаунта">
+            <LogOut size={16} />
+            <span>Выйти</span>
+          </button>
+        </div>
       </header>
 
       {/* Telegram Widget Popup */}
@@ -321,6 +500,213 @@ export const ProfilePage: React.FC<Props> = ({
               <button className="merge-dialog__btn merge-dialog__btn--confirm" onClick={handleMergeConfirm} disabled={tgLoading}>
                 {tgLoading ? <Loader2 size={16} className="spinner" /> : <Link2 size={16} />}
                 Объединить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно редактирования профиля */}
+      {editingProfile && (
+        <div className="profile-modal-backdrop" onClick={() => !profileLoading && setEditingProfile(false)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="profile-modal__close" onClick={() => setEditingProfile(false)} disabled={profileLoading}>
+              <X size={18} />
+            </button>
+            <div className="profile-modal__header">
+              <Edit3 size={22} />
+              <h3>Редактировать профиль</h3>
+            </div>
+            <div className="profile-modal__form">
+              <div className="profile-modal__field">
+                <label>Имя</label>
+                <input
+                  type="text"
+                  value={profileForm.firstName}
+                  onChange={(e) => setProfileForm((p) => ({ ...p, firstName: e.target.value }))}
+                  placeholder="Введите имя"
+                />
+              </div>
+              <div className="profile-modal__field">
+                <label>Фамилия</label>
+                <input
+                  type="text"
+                  value={profileForm.lastName}
+                  onChange={(e) => setProfileForm((p) => ({ ...p, lastName: e.target.value }))}
+                  placeholder="Введите фамилию"
+                />
+              </div>
+              {user.email && (
+                <div className="profile-modal__field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="Введите email"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="profile-modal__actions">
+              <button className="profile-modal__btn profile-modal__btn--secondary" onClick={() => setEditingProfile(false)} disabled={profileLoading}>
+                Отмена
+              </button>
+              <button className="profile-modal__btn profile-modal__btn--primary" onClick={handleSaveProfile} disabled={profileLoading}>
+                {profileLoading ? <Loader2 size={16} className="spinner" /> : <Check size={16} />}
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно изменения пароля */}
+      {showPasswordForm && (
+        <div className="profile-modal-backdrop" onClick={() => !passwordLoading && setShowPasswordForm(false)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="profile-modal__close"
+              onClick={() => {
+                setShowPasswordForm(false);
+                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              }}
+              disabled={passwordLoading}
+            >
+              <X size={18} />
+            </button>
+            <div className="profile-modal__header">
+              <Lock size={22} />
+              <h3>Изменить пароль</h3>
+            </div>
+            <div className="profile-modal__form">
+              <div className="profile-modal__field">
+                <label>Текущий пароль</label>
+                <div className="profile-modal__password-wrap">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                    placeholder="Введите текущий пароль"
+                  />
+                  <button type="button" className="profile-modal__eye" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                    {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="profile-modal__field">
+                <label>Новый пароль</label>
+                <div className="profile-modal__password-wrap">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                    placeholder="Минимум 8 символов"
+                  />
+                  <button type="button" className="profile-modal__eye" onClick={() => setShowNewPassword(!showNewPassword)}>
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="profile-modal__field">
+                <label>Подтвердите пароль</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                  placeholder="Повторите пароль"
+                />
+              </div>
+            </div>
+            <div className="profile-modal__actions">
+              <button
+                className="profile-modal__btn profile-modal__btn--secondary"
+                onClick={() => {
+                  setShowPasswordForm(false);
+                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }}
+                disabled={passwordLoading}
+              >
+                Отмена
+              </button>
+              <button className="profile-modal__btn profile-modal__btn--primary" onClick={handleChangePassword} disabled={passwordLoading}>
+                {passwordLoading ? <Loader2 size={16} className="spinner" /> : <Check size={16} />}
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно добавления email (для Telegram-пользователей) */}
+      {showSetEmailForm && (
+        <div className="profile-modal-backdrop" onClick={() => !setEmailLoading && setShowSetEmailForm(false)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="profile-modal__close"
+              onClick={() => {
+                setShowSetEmailForm(false);
+                setSetEmailForm({ email: '', password: '', confirmPassword: '' });
+              }}
+              disabled={setEmailLoading}
+            >
+              <X size={18} />
+            </button>
+            <div className="profile-modal__header">
+              <Mail size={22} />
+              <h3>Добавить Email</h3>
+            </div>
+            <p className="profile-modal__hint">
+              После добавления вы сможете входить как через Telegram, так и по email/паролю.
+            </p>
+            <div className="profile-modal__form">
+              <div className="profile-modal__field">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={setEmailForm.email}
+                  onChange={(e) => setSetEmailForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div className="profile-modal__field">
+                <label>Пароль</label>
+                <div className="profile-modal__password-wrap">
+                  <input
+                    type={showSetEmailPassword ? 'text' : 'password'}
+                    value={setEmailForm.password}
+                    onChange={(e) => setSetEmailForm((p) => ({ ...p, password: e.target.value }))}
+                    placeholder="Минимум 8 символов"
+                  />
+                  <button type="button" className="profile-modal__eye" onClick={() => setShowSetEmailPassword(!showSetEmailPassword)}>
+                    {showSetEmailPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="profile-modal__field">
+                <label>Подтвердите пароль</label>
+                <input
+                  type="password"
+                  value={setEmailForm.confirmPassword}
+                  onChange={(e) => setSetEmailForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                  placeholder="Повторите пароль"
+                />
+              </div>
+            </div>
+            <div className="profile-modal__actions">
+              <button
+                className="profile-modal__btn profile-modal__btn--secondary"
+                onClick={() => {
+                  setShowSetEmailForm(false);
+                  setSetEmailForm({ email: '', password: '', confirmPassword: '' });
+                }}
+                disabled={setEmailLoading}
+              >
+                Отмена
+              </button>
+              <button className="profile-modal__btn profile-modal__btn--primary" onClick={handleSetEmail} disabled={setEmailLoading}>
+                {setEmailLoading ? <Loader2 size={16} className="spinner" /> : <Check size={16} />}
+                Добавить
               </button>
             </div>
           </div>

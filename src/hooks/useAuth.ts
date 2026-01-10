@@ -1,5 +1,21 @@
 import { useEffect, useState, useCallback } from 'react';
-import { login, profile, register, telegramLogin, telegramLink, telegramUnlink, telegramMerge, setAuthTokens, getStoredTokens } from '../api';
+import { 
+  login, 
+  profile, 
+  register, 
+  telegramLogin, 
+  telegramLink, 
+  telegramUnlink, 
+  telegramMerge,
+  updateProfile,
+  changePassword,
+  setEmail,
+  setAuthTokens, 
+  getStoredTokens,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
+  SetEmailPayload,
+} from '../api';
 import { AuthTokens, UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
 
 type AuthState = {
@@ -125,6 +141,39 @@ export const useAuth = () => {
     }
   }, [updateUser]);
 
+  // Обновить профиль (имя, фамилия, email)
+  const doUpdateProfile = useCallback(async (payload: UpdateProfilePayload): Promise<{ success?: boolean; error?: string }> => {
+    try {
+      const user = await updateProfile(payload);
+      updateUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { error: err?.message || 'Не удалось обновить профиль' };
+    }
+  }, [updateUser]);
+
+  // Изменить или создать пароль
+  const doChangePassword = useCallback(async (payload: ChangePasswordPayload): Promise<{ success?: boolean; error?: string }> => {
+    try {
+      const user = await changePassword(payload);
+      updateUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { error: err?.message || 'Не удалось изменить пароль' };
+    }
+  }, [updateUser]);
+
+  // Установить email (для Telegram-пользователей без email)
+  const doSetEmail = useCallback(async (payload: SetEmailPayload): Promise<{ success?: boolean; error?: string }> => {
+    try {
+      const user = await setEmail(payload);
+      updateUser(user);
+      return { success: true };
+    } catch (err: any) {
+      return { error: err?.message || 'Не удалось установить email' };
+    }
+  }, [updateUser]);
+
   const logout = () => {
     setAuthTokens(null);
     setAuth({ user: null, tokens: null, loading: false, error: null });
@@ -138,6 +187,9 @@ export const useAuth = () => {
     doTelegramLink,
     doTelegramUnlink,
     doTelegramMerge,
+    doUpdateProfile,
+    doChangePassword,
+    doSetEmail,
     updateUser,
     logout 
   };

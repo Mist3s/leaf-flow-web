@@ -236,6 +236,34 @@ export const telegramMerge = (payload: TelegramLoginWidgetPayload) =>
 
 export const profile = () => request<UserProfile>('/v1/auth/profile');
 
+// Обновление профиля (имя, фамилия, email)
+export type UpdateProfilePayload = {
+  firstName?: string;
+  lastName?: string | null;
+  email?: string;
+};
+
+export const updateProfile = (payload: UpdateProfilePayload) =>
+  request<UserProfile>('/v1/auth/profile', { method: 'PATCH', body: JSON.stringify(payload) });
+
+// Изменение или создание пароля
+export type ChangePasswordPayload = {
+  currentPassword?: string | null;  // Обязателен, если пароль уже есть
+  newPassword: string;              // Минимум 8 символов
+};
+
+export const changePassword = (payload: ChangePasswordPayload) =>
+  request<UserProfile>('/v1/auth/password', { method: 'POST', body: JSON.stringify(payload) });
+
+// Установка email для Telegram-пользователей
+export type SetEmailPayload = {
+  email: string;
+  password: string;  // Минимум 8 символов
+};
+
+export const setEmail = (payload: SetEmailPayload) =>
+  request<UserProfile>('/v1/auth/email', { method: 'POST', body: JSON.stringify(payload) });
+
 // Мок-данные для отзывов (будет заменено на API-эндпоинт)
 const mockReviewsData: ReviewsData = {
   averageRating: 5.0,

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { X, CheckCircle, AlertTriangle, Info, ShoppingCart } from 'lucide-react';
+import { X, CheckCircle, AlertTriangle, Info, ShoppingCart, XCircle } from 'lucide-react';
 
 export type ToastAction = {
   label: string;
   onClick: () => void;
 };
 
-export type ToastTone = 'info' | 'success' | 'warning' | 'cart';
+export type ToastTone = 'info' | 'success' | 'warning' | 'error' | 'cart';
 
 export type ToastItem = {
   id: string;
@@ -25,6 +25,7 @@ const ICONS: Record<ToastTone, React.ElementType> = {
   info: Info,
   success: CheckCircle,
   warning: AlertTriangle,
+  error: XCircle,
   cart: ShoppingCart,
 };
 
