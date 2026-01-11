@@ -4972,12 +4972,19 @@ a {
   margin: 0;
 }
 
+.pdp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
 .pdp-back {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  margin-bottom: 1.25rem;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
@@ -4994,6 +5001,107 @@ a {
   border-color: var(--text-muted);
 }
 
+.pdp-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pdp-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdp-action:hover {
+  color: var(--primary);
+  background: var(--surface-muted);
+  border-color: var(--primary);
+}
+
+.pdp-action:active {
+  transform: scale(0.95);
+}
+
+.pdp-share-wrapper {
+  position: relative;
+}
+
+.pdp-share-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  animation: fadeInDown 0.15s ease;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pdp-share-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.pdp-share-menu__item:hover {
+  background: var(--surface-muted);
+  color: var(--primary);
+}
+
+.pdp-share-menu__item svg {
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+.pdp-share-menu__item:hover svg {
+  color: var(--primary);
+}
+
+.pdp-share-menu__vk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+.pdp-share-menu__item:hover .pdp-share-menu__vk {
+  color: var(--primary);
+}
+
 .pdp-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -5003,6 +5111,7 @@ a {
 /* Gallery */
 .pdp-gallery {
   align-self: start;
+  height: 458px;
 }
 
 .pdp-gallery__main {
@@ -5012,12 +5121,13 @@ a {
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  height: 100%;
 }
 
 .pdp-gallery__image {
   width: 100%;
+  height: 100%;
   display: block;
-  aspect-ratio: 1;
   object-fit: cover;
 }
 
@@ -5076,6 +5186,219 @@ a {
   color: var(--text-muted);
 }
 
+/* Tea Info Block */
+.tea-info {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  margin-top: 0.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.tea-info__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.tea-info__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Brewing section */
+.tea-brewing__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tea-brewing__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--surface-muted);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.tea-brewing__card--primary {
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.08) 0%, rgba(45, 138, 54, 0.02) 100%);
+  border-color: rgba(45, 138, 54, 0.15);
+}
+
+[data-theme='dark'] .tea-brewing__card--primary {
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.15) 0%, rgba(45, 138, 54, 0.05) 100%);
+  border-color: rgba(45, 138, 54, 0.25);
+}
+
+.tea-brewing__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tea-brewing__stats {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tea-brewing__stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 65px;
+}
+
+.tea-brewing__stat:last-child {
+  min-width: 80px;
+}
+
+.tea-brewing__stat svg {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+/* Taste section */
+.tea-taste__flavors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tea-taste__flavor {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 100px;
+  transition: all 0.2s ease;
+}
+
+.tea-taste__flavor:hover {
+  border-color: var(--primary);
+  background: rgba(45, 138, 54, 0.05);
+}
+
+.tea-taste__levels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tea-taste__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tea-taste__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.tea-taste__bar {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-muted);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.tea-taste__fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 100px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effects section */
+.tea-effects__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tea-effects__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.1) 0%, rgba(45, 138, 54, 0.05) 100%);
+  border: 1px solid rgba(45, 138, 54, 0.2);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 100px;
+  transition: all 0.2s ease;
+}
+
+[data-theme='dark'] .tea-effects__tag {
+  background: linear-gradient(135deg, rgba(45, 138, 54, 0.2) 0%, rgba(45, 138, 54, 0.1) 100%);
+  border-color: rgba(45, 138, 54, 0.3);
+}
+
+.tea-effects__tag:hover {
+  background: rgba(45, 138, 54, 0.15);
+  border-color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .tea-info {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .tea-info__block:first-child {
+    grid-column: 1 / -1;
+  }
+  
+  .tea-brewing__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .tea-brewing__card {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tea-info {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .tea-brewing__grid {
+    flex-direction: column;
+  }
+  
+  .tea-brewing__card {
+    min-width: unset;
+  }
+}
+
 /* Description full-width section */
 .pdp-description-section {
   grid-column: 1 / -1;
@@ -5091,10 +5414,12 @@ a {
 }
 
 .pdp-description-section__title {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .pdp-description-section__text {
@@ -5595,6 +5920,7 @@ a {
 
   .pdp-gallery {
     position: static;
+    height: auto;
   }
 
   .pdp-title {
@@ -5607,7 +5933,7 @@ a {
   }
 
   .pdp-description-section__title {
-    font-size: 1rem;
+    font-size: 0.75rem;
   }
 
   .pdp-description-section__text {

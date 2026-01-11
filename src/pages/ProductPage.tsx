@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
-import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Tag } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from 'react';
+import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Link2, Share2, Send, MessageCircle, Mail } from 'lucide-react';
 import { getProduct, listCategories, getReviews } from '../api';
 import { Product } from '../types/catalog';
 import { CartItem } from '../types/cart';
@@ -8,6 +8,7 @@ import { formatCurrency, getImageUrl } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
 import { MarkdownContent } from '../components/MarkdownContent';
 import { ReviewsBlock } from '../components/ReviewsBlock';
+import { TeaInfo } from '../components/TeaInfo';
 
 type Props = {
   id: string;
@@ -41,16 +42,6 @@ const VariantButton = memo<{
 
 VariantButton.displayName = 'VariantButton';
 
-// Мемоизированный компонент тега
-const ProductTag = memo<{ tag: string }>(({ tag }) => (
-  <span className="pdp-tag">
-    <Tag size={12} />
-    {tag}
-  </span>
-));
-
-ProductTag.displayName = 'ProductTag';
-
 export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
@@ -60,6 +51,21 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   const [categoryMap, setCategoryMap] = useState<Map<string, string>>(new Map());
   const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Закрытие меню по клику снаружи
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShareMenuOpen(false);
+      }
+    };
+    if (shareMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [shareMenuOpen]);
 
   // Загрузка категорий
   useEffect(() => {
@@ -184,6 +190,44 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
     setActiveVariant(variant);
   }, []);
 
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    if (navigator.share && product) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `${product.name} — Zavarka39`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Failed to share:', err);
+        }
+      }
+    } else {
+      setShareMenuOpen((prev) => !prev);
+    }
+  }, [product]);
+
+  const shareLinks = useMemo(() => {
+    if (!product) return [];
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`${product.name} — Zavarka39`);
+    return [
+      { name: 'Telegram', icon: Send, href: `https://t.me/share/url?url=${url}&text=${text}` },
+      { name: 'WhatsApp', icon: MessageCircle, href: `https://wa.me/?text=${text}%20${url}` },
+      { name: 'VK', icon: 'vk', href: `https://vk.com/share.php?url=${url}&title=${text}` },
+      { name: 'Email', icon: Mail, href: `mailto:?subject=${text}&body=${url}` },
+    ];
+  }, [product]);
+
   if (loading) {
     return (
       <div className="pdp-loading">
@@ -212,11 +256,44 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
 
   return (
     <div className="pdp">
-      {/* Back button */}
-      <button className="pdp-back" onClick={handleNavigateBack}>
-        <ArrowLeft size={20} />
-        <span>Назад в каталог</span>
-      </button>
+      {/* Top bar */}
+      <div className="pdp-topbar">
+        <button className="pdp-back" onClick={handleNavigateBack}>
+          <ArrowLeft size={20} />
+          <span>Назад в каталог</span>
+        </button>
+        <div className="pdp-actions">
+          <button className="pdp-action" onClick={handleCopyLink} title="Копировать ссылку">
+            <Link2 size={18} />
+          </button>
+          <div className="pdp-share-wrapper" ref={shareMenuRef}>
+            <button className="pdp-action" onClick={handleShare} title="Поделиться">
+              <Share2 size={18} />
+            </button>
+            {shareMenuOpen && (
+              <div className="pdp-share-menu">
+                {shareLinks.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pdp-share-menu__item"
+                    onClick={() => setShareMenuOpen(false)}
+                  >
+                    {link.icon === 'vk' ? (
+                      <span className="pdp-share-menu__vk">VK</span>
+                    ) : (
+                      <link.icon size={16} />
+                    )}
+                    <span>{link.name}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="pdp-layout">
         {/* Image */}
@@ -237,15 +314,6 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
 
         {/* Info */}
         <div className="pdp-info">
-          {/* Tags */}
-          {product.tags?.length > 0 && (
-            <div className="pdp-tags">
-              {product.tags.map((tag) => (
-                <ProductTag key={tag} tag={tag} />
-              ))}
-            </div>
-          )}
-
           {/* Title */}
           <h1 className="pdp-title">{product.name}</h1>
 
@@ -319,6 +387,9 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
             </div>
           )}
         </div>
+
+        {/* Tea Info Block */}
+        <TeaInfo />
 
         {/* Description - full width section */}
         {product.description && (
