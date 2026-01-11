@@ -267,14 +267,22 @@ export const setEmail = (payload: SetEmailPayload) =>
 // Мок-данные для отзывов (будет заменено на API-эндпоинт)
 const mockReviewsData: ReviewsData = {
   averageRating: 5.0,
-  totalReviews: 22,
+  totalReviews: 23,
   platforms: [
-    { platform: 'yandex', rating: 5.0, reviewCount: 1, iconUrl: '/icon/yandex_icon.svg', reviewsUrl: 'https://yandex.ru/maps/org/zavarka39_kitayskiy_chay/136643377826?si=f6gx50r3r16h0uuh3qv5prfrk4' },
+    { platform: 'yandex', rating: 5.0, reviewCount: 2, iconUrl: '/icon/yandex_icon.svg', reviewsUrl: 'https://yandex.ru/maps/org/zavarka39_kitayskiy_chay/136643377826?si=f6gx50r3r16h0uuh3qv5prfrk4' },
     { platform: 'google', rating: 0.0, reviewCount: 0, iconUrl: '/icon/google_icon.svg', reviewsUrl: '#' },
     { platform: 'telegram', rating: 5.0, reviewCount: 3, iconUrl: '/icon/tg_icon.svg', reviewsUrl: 'https://t.me/zavarka39_ru' },
     { platform: 'avito', rating: 5.0, reviewCount: 18, iconUrl: '/icon/avito_icon.svg', reviewsUrl: 'https://www.avito.ru/brands/496c10b485c0cc17027cc587d150d0d1' },
   ],
   reviews: [
+    {
+      id: '23',
+      platform: 'yandex',
+      author: 'Анна Р.',
+      rating: 5,
+      text: 'Огромное спасибо вам за помощь в подборе чая для подарка. Для меня это то было очень важно, так как человек, которому предназначен подарок, пьёт только чай. Желаю вам дальнейшего развития и благополучия.',
+      date: '2026-01-10',
+    },
     {
       id: '22',
       platform: 'yandex',
