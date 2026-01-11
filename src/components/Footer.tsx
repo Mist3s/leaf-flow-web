@@ -1,5 +1,5 @@
 import React, { useCallback, memo, useMemo } from 'react';
-import { Phone, Send, Truck, FileText, Shield } from 'lucide-react';
+import { Phone, Send, Truck, FileText, Shield, Info } from 'lucide-react';
 
 type Props = {
   onNavigate: (path: string) => void;
@@ -23,6 +23,11 @@ export const Footer: React.FC<Props> = memo(({ onNavigate }) => {
     onNavigate('/offer');
   }, [onNavigate]);
 
+  const handleAboutClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigate('/about');
+  }, [onNavigate]);
+
   return (
     <footer className="footer">
       <div className="footer__main">
@@ -38,6 +43,10 @@ export const Footer: React.FC<Props> = memo(({ onNavigate }) => {
           <a href="/offer" onClick={handleOfferClick}>
             <FileText size={14} />
             Оферта
+          </a>
+          <a href="/about" onClick={handleAboutClick}>
+            <Info size={14} />
+            О нас
           </a>
         </div>
 

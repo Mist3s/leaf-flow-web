@@ -9,7 +9,8 @@ type Route =
   | { name: 'auth'; params: {} }
   | { name: 'delivery'; params: {} }
   | { name: 'privacy'; params: {} }
-  | { name: 'offer'; params: {} };
+  | { name: 'offer'; params: {} }
+  | { name: 'about'; params: {} };
 
 const parseRoute = (): Route => {
   const path = window.location.pathname || '/';
@@ -21,6 +22,7 @@ const parseRoute = (): Route => {
   if (path === '/delivery') return { name: 'delivery', params: {} };
   if (path === '/privacy') return { name: 'privacy', params: {} };
   if (path === '/offer') return { name: 'offer', params: {} };
+  if (path === '/about') return { name: 'about', params: {} };
   const productMatch = path.match(/^\/product\/([^/]+)$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
   return { name: 'home', params: {} };

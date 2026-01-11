@@ -6064,13 +6064,6 @@ a {
 }
 
 /* Document sections */
-.doc-section {
-  margin-bottom: 1.5rem;
-}
-
-.doc-section:last-child {
-  margin-bottom: 0;
-}
 
 .doc-section h2 {
   font-size: 1.1rem;
@@ -6085,7 +6078,7 @@ a {
   font-size: 0.95rem;
   color: var(--text-muted);
   line-height: 1.7;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .doc-section p:last-child {
@@ -6105,6 +6098,20 @@ a {
 
 .doc-section strong {
   color: var(--text);
+}
+
+.doc-section__lead {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.doc-section__quote {
+  font-size: 1.05rem !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  font-style: italic !important;
 }
 
 @media (max-width: 600px) {

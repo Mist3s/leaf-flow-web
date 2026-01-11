@@ -23,6 +23,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ defaul
 const DeliveryPage = lazy(() => import('./pages/DeliveryPage').then(m => ({ default: m.DeliveryPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const OfferPage = lazy(() => import('./pages/OfferPage').then(m => ({ default: m.OfferPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -307,6 +308,13 @@ const App: React.FC = () => {
         return (
           <Suspense fallback={<PageLoader />}>
             <OfferPage onNavigate={navigate} />
+          </Suspense>
+        );
+
+      case 'about':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <AboutPage onNavigate={navigate} />
           </Suspense>
         );
 
