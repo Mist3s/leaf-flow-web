@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const SITE_URL = 'https://zavarka39.ru';
-const API_URL = 'https://app-stage.zavarka39.ru/api/v1/catalog/products';
+const API_URL = 'https://app.zavarka39.ru/api/v1/catalog/products';
 
 async function fetchAllProducts() {
   const products = [];
@@ -27,12 +27,13 @@ async function fetchAllProducts() {
   return products;
 }
 
-// Статические страницы сайта
+// Статические страницы сайта (со слешем в конце для консистентности)
 const STATIC_PAGES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
-  { path: '/delivery', changefreq: 'monthly', priority: '0.6' },
-  { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
-  { path: '/offer', changefreq: 'yearly', priority: '0.3' },
+  { path: '/delivery/', changefreq: 'monthly', priority: '0.6' },
+  { path: '/privacy/', changefreq: 'yearly', priority: '0.3' },
+  { path: '/offer/', changefreq: 'yearly', priority: '0.3' },
+  { path: '/about/', changefreq: 'monthly', priority: '0.5' },
 ];
 
 function generateSitemap(products) {
@@ -52,11 +53,11 @@ function generateSitemap(products) {
   </url>`;
   }
 
-  // Страницы товаров
+  // Страницы товаров (со слешем в конце)
   for (const product of products) {
     xml += `
   <url>
-    <loc>${SITE_URL}/product/${product.id}</loc>
+    <loc>${SITE_URL}/product/${product.id}/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

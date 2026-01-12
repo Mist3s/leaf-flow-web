@@ -51,11 +51,11 @@ export const Header: React.FC<Props> = memo(({
   }, [onNavigate]);
 
   const handleProfileClick = useCallback(() => {
-    onNavigate('/profile');
+    onNavigate('/profile/');
   }, [onNavigate]);
 
   const handleCartClick = useCallback(() => {
-    onNavigate('/cart');
+    onNavigate('/cart/');
   }, [onNavigate]);
 
   const handleSearchClear = useCallback(() => {

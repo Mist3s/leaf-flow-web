@@ -37,19 +37,19 @@ const ProductCard = memo<{
   const minPrice = prices.length ? Math.min(...prices) : null;
 
   const handleClick = useCallback(() => {
-    onNavigate(`/product/${product.id}`);
+    onNavigate(`/product/${product.id}/`);
   }, [onNavigate, product.id]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onNavigate(`/product/${product.id}`);
+      onNavigate(`/product/${product.id}/`);
     }
   }, [onNavigate, product.id]);
 
   const handleButtonClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onNavigate(`/product/${product.id}`);
+    onNavigate(`/product/${product.id}/`);
   }, [onNavigate, product.id]);
 
   return (

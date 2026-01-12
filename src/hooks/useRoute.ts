@@ -14,17 +14,21 @@ type Route =
 
 const parseRoute = (): Route => {
   const path = window.location.pathname || '/';
+  
   if (path === '/' || path === '') return { name: 'home', params: {} };
-  if (path === '/cart') return { name: 'cart', params: {} };
-  if (path === '/checkout') return { name: 'checkout', params: {} };
-  if (path === '/profile') return { name: 'profile', params: {} };
-  if (path === '/auth') return { name: 'auth', params: {} };
-  if (path === '/delivery') return { name: 'delivery', params: {} };
-  if (path === '/privacy') return { name: 'privacy', params: {} };
-  if (path === '/offer') return { name: 'offer', params: {} };
-  if (path === '/about') return { name: 'about', params: {} };
-  const productMatch = path.match(/^\/product\/([^/]+)$/);
+  if (path === '/cart' || path === '/cart/') return { name: 'cart', params: {} };
+  if (path === '/checkout' || path === '/checkout/') return { name: 'checkout', params: {} };
+  if (path === '/profile' || path === '/profile/') return { name: 'profile', params: {} };
+  if (path === '/auth' || path === '/auth/') return { name: 'auth', params: {} };
+  if (path === '/delivery' || path === '/delivery/') return { name: 'delivery', params: {} };
+  if (path === '/privacy' || path === '/privacy/') return { name: 'privacy', params: {} };
+  if (path === '/offer' || path === '/offer/') return { name: 'offer', params: {} };
+  if (path === '/about' || path === '/about/') return { name: 'about', params: {} };
+  
+  // Продукт: /product/123 или /product/123/
+  const productMatch = path.match(/^\/product\/([^/]+)\/?$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
+  
   return { name: 'home', params: {} };
 };
 

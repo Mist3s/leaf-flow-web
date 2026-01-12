@@ -105,11 +105,11 @@ export const updateProductSchema = (product: {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    '@id': `${BASE_URL}/product/${product.id}`,
+    '@id': `${BASE_URL}/product/${product.id}/`,
     name: product.name,
     description: product.description || `${product.name} — купить китайский чай в Калининграде`,
     image: product.image?.startsWith('http') ? product.image : `${BASE_URL}${product.image || '/logo.png'}`,
-    url: `${BASE_URL}/product/${product.id}`,
+    url: `${BASE_URL}/product/${product.id}/`,
     brand: {
       '@type': 'Brand',
       name: 'Zavarka39',
@@ -166,7 +166,7 @@ export const clearDynamicSchemas = () => {
   document.querySelectorAll('script[data-schema]').forEach((el) => el.remove());
 };
 
-// SEO конфигурации для страниц
+// SEO конфигурации для страниц (canonical со слешем в конце)
 export const SEO_PAGES = {
   home: {
     title: 'Zavarka39 — Китайский чай в Калининграде | Купить чай с доставкой',
@@ -176,36 +176,36 @@ export const SEO_PAGES = {
   cart: {
     title: 'Корзина — Zavarka39',
     description: 'Ваша корзина покупок в интернет-магазине китайского чая Zavarka39. Оформите заказ с доставкой по Калининграду.',
-    canonical: '/cart',
+    canonical: '/cart/',
   },
   checkout: {
     title: 'Оформление заказа — Zavarka39',
     description: 'Оформление заказа китайского чая с доставкой по Калининграду и области. Быстрая доставка, удобная оплата.',
-    canonical: '/checkout',
+    canonical: '/checkout/',
   },
   profile: {
     title: 'Мой профиль — Zavarka39',
     description: 'Личный кабинет в интернет-магазине китайского чая Zavarka39. История заказов и настройки профиля.',
-    canonical: '/profile',
+    canonical: '/profile/',
   },
   delivery: {
     title: 'Доставка и оплата — Zavarka39 | Калининград',
     description: 'Способы доставки и оплаты в интернет-магазине Zavarka39. Самовывоз бесплатно, курьерская доставка по Калининграду. Оплата наличными или переводом.',
-    canonical: '/delivery',
+    canonical: '/delivery/',
   },
   privacy: {
     title: 'Политика конфиденциальности — Zavarka39',
     description: 'Политика конфиденциальности интернет-магазина Zavarka39. Защита персональных данных покупателей, порядок обработки и хранения информации.',
-    canonical: '/privacy',
+    canonical: '/privacy/',
   },
   offer: {
     title: 'Публичная оферта — Zavarka39',
     description: 'Публичная оферта интернет-магазина Zavarka39. Условия продажи товаров, доставки, оплаты и возврата. Договор купли-продажи.',
-    canonical: '/offer',
+    canonical: '/offer/',
   },
   about: {
     title: 'О компании Zavarka39 — Китайский чай с 2022 года',
     description: 'Zavarka39 — продолжение дела, начатого более 20 лет назад. Настоящий китайский чай с понятным происхождением, выбранный за качество сырья и традиционную технологию производства.',
-    canonical: '/about',
+    canonical: '/about/',
   },
 } as const;

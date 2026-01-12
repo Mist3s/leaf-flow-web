@@ -10,41 +10,41 @@ export const Footer: React.FC<Props> = memo(({ onNavigate }) => {
 
   const handleDeliveryClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate('/delivery');
+    onNavigate('/delivery/');
   }, [onNavigate]);
 
   const handlePrivacyClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate('/privacy');
+    onNavigate('/privacy/');
   }, [onNavigate]);
 
   const handleOfferClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate('/offer');
+    onNavigate('/offer/');
   }, [onNavigate]);
 
   const handleAboutClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onNavigate('/about');
+    onNavigate('/about/');
   }, [onNavigate]);
 
   return (
     <footer className="footer">
       <div className="footer__main">
         <div className="footer__links">
-          <a href="/delivery" onClick={handleDeliveryClick}>
+          <a href="/delivery/" onClick={handleDeliveryClick}>
             <Truck size={14} />
             Доставка и оплата
           </a>
-          <a href="/privacy" onClick={handlePrivacyClick}>
+          <a href="/privacy/" onClick={handlePrivacyClick}>
             <Shield size={14} />
             Конфиденциальность
           </a>
-          <a href="/offer" onClick={handleOfferClick}>
+          <a href="/offer/" onClick={handleOfferClick}>
             <FileText size={14} />
             Оферта
           </a>
-          <a href="/about" onClick={handleAboutClick}>
+          <a href="/about/" onClick={handleAboutClick}>
             <Info size={14} />
             О нас
           </a>
