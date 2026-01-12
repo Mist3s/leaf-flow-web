@@ -85,6 +85,17 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   useEffect(() => {
     setLoading(true);
     setError(null);
+    
+    // Устанавливаем временный title сразу при загрузке страницы продукта
+    // Это поможет поисковым системам видеть более релевантный title
+    // Title будет обновлен после загрузки данных о продукте
+    updateSEO({
+      title: 'Китайский чай — купить в Калининграде | Zavarka39',
+      description: 'Купить китайский чай в Калининграде с доставкой. Премиальный чай из Китая: пуэр, улун, зелёный, белый чай.',
+      canonical: `/product/${id}`,
+      type: 'product',
+    });
+    
     getProduct(id)
       .then((res) => {
         setProduct(res);
