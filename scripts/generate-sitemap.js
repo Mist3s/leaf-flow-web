@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const SITE_URL = 'https://zavarka39.ru';
-const API_URL = 'https://app-stage.zavarka39.ru/api/v1/catalog/products';
+const API_URL = 'https://app.zavarka39.ru/api/v1/catalog/products';
 
 async function fetchAllProducts() {
   const products = [];
