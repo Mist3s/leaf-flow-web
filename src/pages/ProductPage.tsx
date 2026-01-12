@@ -92,7 +92,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
     updateSEO({
       title: 'Китайский чай — купить в Калининграде | Zavarka39',
       description: 'Купить китайский чай в Калининграде с доставкой. Премиальный чай из Китая: пуэр, улун, зелёный, белый чай.',
-      canonical: `/product/${id}`,
+      canonical: `/product/${id}/`,
       type: 'product',
     });
     
@@ -126,7 +126,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
       updateSEO({
         title: `${product.name} — купить в Калининграде | Zavarka39`,
         description: `${product.name} ${priceText}. Купить китайский чай в Калининграде с доставкой. ${product.description?.slice(0, 120) || 'Премиальный чай из Китая.'}`,
-        canonical: `/product/${product.id}`,
+        canonical: `/product/${product.id}/`,
         type: 'product',
         image: product.image,
       });
@@ -149,7 +149,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
       if (categoryName) {
         breadcrumbs.push({ name: categoryName, url: `/?category=${product.category}` });
       }
-      breadcrumbs.push({ name: product.name, url: `/product/${product.id}` });
+      breadcrumbs.push({ name: product.name, url: `/product/${product.id}/` });
       updateBreadcrumbSchema(breadcrumbs);
     }
   }, [product, categoryMap]);
@@ -188,7 +188,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   }, [onNavigate]);
 
   const handleNavigateToCart = useCallback(() => {
-    onNavigate('/cart');
+    onNavigate('/cart/');
   }, [onNavigate]);
 
   const handleVariantClick = useCallback((variant: Product['variants'][number]) => {

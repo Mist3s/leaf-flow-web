@@ -27,12 +27,13 @@ async function fetchAllProducts() {
   return products;
 }
 
-// Статические страницы сайта
+// Статические страницы сайта (со слешем в конце для консистентности)
 const STATIC_PAGES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
-  { path: '/delivery', changefreq: 'monthly', priority: '0.6' },
-  { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
-  { path: '/offer', changefreq: 'yearly', priority: '0.3' },
+  { path: '/delivery/', changefreq: 'monthly', priority: '0.6' },
+  { path: '/privacy/', changefreq: 'yearly', priority: '0.3' },
+  { path: '/offer/', changefreq: 'yearly', priority: '0.3' },
+  { path: '/about/', changefreq: 'monthly', priority: '0.5' },
 ];
 
 function generateSitemap(products) {
@@ -52,11 +53,11 @@ function generateSitemap(products) {
   </url>`;
   }
 
-  // Страницы товаров
+  // Страницы товаров (со слешем в конце)
   for (const product of products) {
     xml += `
   <url>
-    <loc>${SITE_URL}/product/${product.id}</loc>
+    <loc>${SITE_URL}/product/${product.id}/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

@@ -137,7 +137,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
         </div>
         <h2 className="checkout-empty__title">Войдите в аккаунт</h2>
         <p className="checkout-empty__text">Для оформления заказа необходимо авторизоваться</p>
-        <button className="button" onClick={onOpenAuth ?? (() => onNavigate('/auth'))}>
+        <button className="button" onClick={onOpenAuth ?? (() => onNavigate('/auth/'))}>
           <LogIn size={18} />
           Войти в аккаунт
         </button>
@@ -184,7 +184,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
   return (
     <div className="checkout-page">
       <header className="checkout-header">
-        <button className="checkout-back" onClick={() => onNavigate('/cart')}>
+        <button className="checkout-back" onClick={() => onNavigate('/cart/')}>
           <ArrowLeft size={20} />
         </button>
         <div className="checkout-header__info">

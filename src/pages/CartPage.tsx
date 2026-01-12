@@ -39,7 +39,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
         </div>
         <h2 className="cart-empty__title">Войдите в аккаунт</h2>
         <p className="cart-empty__text">Чтобы добавлять товары в корзину и оформлять заказы, необходимо авторизоваться</p>
-        <button className="button" onClick={onOpenAuth ?? (() => onNavigate('/auth'))}>
+        <button className="button" onClick={onOpenAuth ?? (() => onNavigate('/auth/'))}>
           <LogIn size={18} />
           Войти в аккаунт
         </button>
@@ -169,7 +169,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
               <span className="cart-summary__total-value">{formatCurrency(cart.totalPrice)}</span>
             </div>
 
-            <button className="cart-summary__btn" onClick={() => onNavigate('/checkout')}>
+            <button className="cart-summary__btn" onClick={() => onNavigate('/checkout/')}>
               Оформить заказ
               <ArrowRight size={18} />
             </button>
@@ -187,7 +187,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
           <span className="cart-mobile-bar__label">Итого</span>
           <strong className="cart-mobile-bar__total">{formatCurrency(cart.totalPrice)}</strong>
         </div>
-        <button className="cart-mobile-bar__btn" onClick={() => onNavigate('/checkout')}>
+        <button className="cart-mobile-bar__btn" onClick={() => onNavigate('/checkout/')}>
           Оформить
           <ArrowRight size={18} />
         </button>
