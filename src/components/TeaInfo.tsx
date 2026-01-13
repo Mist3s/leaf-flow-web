@@ -108,6 +108,9 @@ export const TeaInfo: React.FC = memo(() => {
               <span key={idx} className="tea-effects__tag">{effect}</span>
             ))}
           </div>
+          <p className="tea-info__note">
+            Важно: эффект индивидуален и зависит от чувствительности к кофеину, крепости и объёма напитка, а также времени употребления.
+          </p>
         </div>
       )}
     </section>

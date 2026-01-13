@@ -5363,6 +5363,14 @@ a {
   border-color: var(--primary);
 }
 
+.tea-info__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
 @media (max-width: 900px) {
   .tea-info {
     grid-template-columns: 1fr 1fr;
