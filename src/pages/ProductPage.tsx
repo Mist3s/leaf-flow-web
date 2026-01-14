@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from 'react';
-import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Link2, Share2, Send, MessageCircle, Mail } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Link2, Share2, Send, MessageCircle, Mail, X } from 'lucide-react';
 import { getProduct, listCategories, getReviews } from '../api';
 import { Product, ProductDetail } from '../types/catalog';
 import { CartItem } from '../types/cart';
@@ -10,6 +10,7 @@ import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSch
 import { MarkdownContent } from '../components/MarkdownContent';
 import { ReviewsBlock } from '../components/ReviewsBlock';
 import { TeaInfo } from '../components/TeaInfo';
+import { ShopBadges } from '../components/ShopBadges';
 
 type Props = {
   id: string;
@@ -54,7 +55,28 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const shareMenuRef = useRef<HTMLDivElement>(null);
+
+  // Определяем мобильное устройство
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Блокировка скролла при открытом share меню на мобильных
+  useEffect(() => {
+    if (isMobile && shareMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, shareMenuOpen]);
 
   // Закрытие меню по клику снаружи
   useEffect(() => {
@@ -288,7 +310,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
       <div className="pdp-topbar">
         <button className="pdp-back" onClick={handleNavigateBack}>
           <ArrowLeft size={20} />
-          <span>Назад в каталог</span>
+          <span>Назад</span>
         </button>
         <div className="pdp-actions">
           <button className="pdp-action" onClick={handleCopyLink} title="Копировать ссылку">
@@ -299,25 +321,38 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
               <Share2 size={18} />
             </button>
             {shareMenuOpen && (
-              <div className="pdp-share-menu">
-                {shareLinks.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pdp-share-menu__item"
-                    onClick={() => setShareMenuOpen(false)}
-                  >
-                    {link.icon === 'vk' ? (
-                      <span className="pdp-share-menu__vk">VK</span>
-                    ) : (
-                      <link.icon size={16} />
-                    )}
-                    <span>{link.name}</span>
-                  </a>
-                ))}
-              </div>
+              <>
+                {isMobile && (
+                  <div className="pdp-share-overlay" onClick={() => setShareMenuOpen(false)} />
+                )}
+                <div className={`pdp-share-menu ${isMobile ? 'pdp-share-menu--mobile' : ''}`}>
+                  {isMobile && (
+                    <>
+                      <h4 className="pdp-share-menu__title">Поделиться</h4>
+                      <button className="pdp-share-menu__close" onClick={() => setShareMenuOpen(false)}>
+                        <X size={18} />
+                      </button>
+                    </>
+                  )}
+                  {shareLinks.map((link) => (
+                    <a
+                      key={link.name}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="pdp-share-menu__item"
+                      onClick={() => setShareMenuOpen(false)}
+                    >
+                      {link.icon === 'vk' ? (
+                        <span className="pdp-share-menu__vk">VK</span>
+                      ) : (
+                        <link.icon size={16} />
+                      )}
+                      <span>{link.name}</span>
+                    </a>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -344,6 +379,9 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         <div className="pdp-info">
           {/* Title */}
           <h1 className="pdp-title">{product.name}</h1>
+
+          {/* Shop Badges - доставка, оплата, контакты */}
+          <ShopBadges />
 
           {/* Variants */}
           <div className="pdp-variants">

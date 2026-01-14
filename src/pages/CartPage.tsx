@@ -90,6 +90,10 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
               key={`${item.productId}:${item.variantId}`}
               className="cart-item"
               style={{ animationDelay: `${index * 0.05}s` }}
+              onClick={() => onNavigate(`/product/${item.productId}/`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && onNavigate(`/product/${item.productId}/`)}
             >
               <div className="cart-item__media">
               <img src={getImageUrl(item.image) || placeholder} alt={item.productName} loading="lazy" />
@@ -103,7 +107,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
               </div>
                   <button
                     className="cart-item__remove"
-                    onClick={() => onRemove(item.productId, item.variantId)}
+                    onClick={(e) => { e.stopPropagation(); onRemove(item.productId, item.variantId); }}
                     aria-label="Удалить товар"
                   >
                     <Trash2 size={16} />
@@ -111,12 +115,17 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
                 </div>
 
                 <div className="cart-item__bottom">
-                  <div className="cart-qty">
+                  <div className="cart-qty" onClick={(e) => e.stopPropagation()}>
                     <button
                       className="cart-qty__btn"
-                      onClick={() => onChangeQty(item.productId, item.variantId, Math.max(1, item.quantity - 1))}
-                      disabled={item.quantity <= 1}
-                      aria-label="Уменьшить количество"
+                      onClick={() => {
+                        if (item.quantity <= 1) {
+                          onRemove(item.productId, item.variantId);
+                        } else {
+                          onChangeQty(item.productId, item.variantId, item.quantity - 1);
+                        }
+                      }}
+                      aria-label={item.quantity <= 1 ? "Удалить товар" : "Уменьшить количество"}
                     >
                     <Minus size={14} />
                   </button>
