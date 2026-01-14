@@ -184,7 +184,12 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   }, [product, activeVariant, quantity, onAdd]);
 
   const handleNavigateBack = useCallback(() => {
-    onNavigate('/');
+    // Если есть история браузера — возвращаемся назад, иначе на главную
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      onNavigate('/');
+    }
   }, [onNavigate]);
 
   const handleNavigateToCart = useCallback(() => {

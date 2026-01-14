@@ -23,6 +23,18 @@ const STATIC_PAGES = [
   { path: '/about/', output: 'about/index.html' },
 ];
 
+// Категории для pre-rendering (должны соответствовать src/utils/categories.ts)
+const CATEGORY_PAGES = [
+  { path: '/catalog/shu-puer/', output: 'catalog/shu-puer/index.html' },
+  { path: '/catalog/sheng-puer/', output: 'catalog/sheng-puer/index.html' },
+  { path: '/catalog/ulun/', output: 'catalog/ulun/index.html' },
+  { path: '/catalog/krasnyj-chaj/', output: 'catalog/krasnyj-chaj/index.html' },
+  { path: '/catalog/zelenyj-chaj/', output: 'catalog/zelenyj-chaj/index.html' },
+  { path: '/catalog/belyj-chaj/', output: 'catalog/belyj-chaj/index.html' },
+  { path: '/catalog/chajnyj-napitok/', output: 'catalog/chajnyj-napitok/index.html' },
+  { path: '/catalog/posuda/', output: 'catalog/posuda/index.html' },
+];
+
 // Получение всех продуктов из API
 async function fetchAllProducts() {
   const products = [];
@@ -262,6 +274,25 @@ async function main() {
         // Проверяем браузер перед каждой страницей
         if (!browser || !browser.isConnected()) {
           console.error('❌ Браузер закрыт во время рендеринга');
+          break;
+        }
+        
+        const outputPath = path.join(DIST_DIR, page.output);
+        const result = await prerenderPage(browser, `${SITE_URL}${page.path}`, outputPath);
+        
+        if (result.success) {
+          results.success++;
+          results.pages.push({ path: page.path, title: result.title });
+        } else {
+          results.failed++;
+        }
+      }
+
+      // Pre-render страниц категорий
+      console.log(`\n📂 Рендеринг страниц категорий (${CATEGORY_PAGES.length} шт.)...`);
+      for (const page of CATEGORY_PAGES) {
+        if (!browser || !browser.isConnected()) {
+          console.error('❌ Браузер закрыт во время рендеринга категорий');
           break;
         }
         

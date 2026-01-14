@@ -5,6 +5,7 @@ import { Product } from '../types/catalog';
 import { ReviewsData } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
 import { ReviewsCompact } from '../components/ReviewsCompact';
+import { getSlugById, getCategoryById } from '../utils/categories';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -21,6 +22,8 @@ type Props = {
   filters: { search: string; category: string };
   onFiltersChange: (next: Partial<Props['filters']>) => void;
   onNavigate: (path: string) => void;
+  /** H1 заголовок для страницы категории (передаётся из App) */
+  categoryH1?: string | null;
 };
 
 // Мемоизированная карточка товара
@@ -113,7 +116,7 @@ const CategoryButton = memo<{
 
 CategoryButton.displayName = 'CategoryButton';
 
-export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigate }) => {
+export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigate, categoryH1 }) => {
   const filterKey = `${filters.search}|${filters.category}`;
   const hasCachedData = cache.filterKey === filterKey && cache.products.length > 0;
 
@@ -257,23 +260,45 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
   }, [onFiltersChange]);
 
   const handleCategoryClick = useCallback((categoryId: string) => {
-    onFiltersChange({ category: categoryId });
-  }, [onFiltersChange]);
+    if (categoryId === '') {
+      // "Все" — переход на главную
+      onNavigate('/');
+    } else {
+      // Переход на страницу категории с SEO-friendly URL
+      const slug = getSlugById(categoryId);
+      if (slug) {
+        onNavigate(`/catalog/${slug}/`);
+      } else {
+        // Fallback если категория не найдена в маппинге (используем id напрямую)
+        onNavigate(`/catalog/${categoryId}/`);
+      }
+    }
+  }, [onNavigate]);
 
   const handleResetFilters = useCallback(() => {
     onFiltersChange({ search: '', category: '' });
   }, [onFiltersChange]);
 
-  // Заголовок секции товаров
+  // Заголовок секции товаров (используем categoryH1 для SEO, если передан)
   const productsTitle = useMemo(() => {
+    // Если передан H1 из URL категории — используем его
+    if (categoryH1) {
+      return categoryH1;
+    }
     if (filters.category) {
+      // Сначала пробуем найти в маппинге категорий
+      const catConfig = getCategoryById(filters.category);
+      if (catConfig) {
+        return catConfig.seo.h1;
+      }
+      // Fallback на label из API
       return categories.find((c) => c.id === filters.category)?.label || 'Товары';
     }
     if (filters.search) {
       return 'Результаты поиска';
     }
-    return 'Все товары';
-  }, [filters.category, filters.search, categories]);
+    return 'Каталог китайского чая';
+  }, [categoryH1, filters.category, filters.search, categories]);
 
   return (
     <div className="home">
@@ -281,10 +306,18 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
       <section className="home-hero">
         <div className="home-hero__main">
           <div className="home-hero__content">
-            <h1 className="home-hero__title">
-              Откройте мир<br />
-              <span className="home-hero__title-accent">настоящего чая</span>
-            </h1>
+            {/* H1 только на главной странице, для категорий H1 в секции товаров */}
+            {categoryH1 ? (
+              <div className="home-hero__title">
+                Откройте мир<br />
+                <span className="home-hero__title-accent">настоящего чая</span>
+              </div>
+            ) : (
+              <h1 className="home-hero__title">
+                Откройте мир<br />
+                <span className="home-hero__title-accent">настоящего чая</span>
+              </h1>
+            )}
             <p className="home-hero__subtitle">
               Коллекция отборного чая из лучших провинций Китая. 
               Прямые поставки, гарантия качества.
@@ -366,7 +399,12 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
       {/* Products */}
       <section className="home-products">
         <div className="home-products__header">
-          <h2 className="home-products__title">{productsTitle}</h2>
+          {/* H1 для страниц категорий (SEO), H2 для главной */}
+          {categoryH1 ? (
+            <h1 className="home-products__title">{productsTitle}</h1>
+          ) : (
+            <h2 className="home-products__title">{productsTitle}</h2>
+          )}
           <span className="home-products__count">
             {loading ? 'Загрузка...' : `${products.length} ${getProductsWord(products.length)}`}
           </span>

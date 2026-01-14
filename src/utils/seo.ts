@@ -1,4 +1,5 @@
 import { SITE_URL } from '../config';
+import { getCategoryBySlug, CategoryConfig } from './categories';
 
 type SEOConfig = {
   title: string;
@@ -209,3 +210,26 @@ export const SEO_PAGES = {
     canonical: '/about/',
   },
 } as const;
+
+/**
+ * Получить SEO-конфигурацию для страницы категории
+ */
+export const getCategorySEO = (slug: string): SEOConfig | null => {
+  const category = getCategoryBySlug(slug);
+  if (!category) return null;
+  
+  return {
+    title: category.seo.title,
+    description: category.seo.description,
+    canonical: `/catalog/${slug}/`,
+    type: 'website',
+  };
+};
+
+/**
+ * Получить H1 для страницы категории
+ */
+export const getCategoryH1 = (slug: string): string | null => {
+  const category = getCategoryBySlug(slug);
+  return category?.seo.h1 ?? null;
+};

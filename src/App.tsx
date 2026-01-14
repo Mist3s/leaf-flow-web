@@ -11,7 +11,8 @@ import { createOrder, clearCart } from './api';
 import { CartItem } from './types/cart';
 import { ToastItem, ToastStack } from './components/Toast';
 import { AuthModal } from './components/AuthModal';
-import { updateSEO, SEO_PAGES } from './utils/seo';
+import { updateSEO, SEO_PAGES, getCategorySEO, getCategoryH1 } from './utils/seo';
+import { getIdBySlug } from './utils/categories';
 
 // Lazy loaded pages для code splitting
 const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
@@ -81,6 +82,15 @@ const App: React.FC = () => {
         description: 'Ваш заказ успешно оформлен. Спасибо за покупку в интернет-магазине китайского чая Zavarka39.',
         canonical: '/checkout',
       });
+    } else if (route.name === 'catalog' && 'slug' in route.params) {
+      // SEO для страницы категории
+      const categorySEO = getCategorySEO(route.params.slug);
+      if (categorySEO) {
+        updateSEO(categorySEO);
+      } else {
+        // Fallback если категория не найдена
+        updateSEO(SEO_PAGES.home);
+      }
     } else if (SEO_PAGES[routeName]) {
       updateSEO(SEO_PAGES[routeName]);
     } else if (route.name === 'product') {
@@ -88,7 +98,7 @@ const App: React.FC = () => {
     } else {
       updateSEO(SEO_PAGES.home);
     }
-  }, [route.name, orderSummary]);
+  }, [route.name, route.params && 'slug' in route.params ? route.params.slug : null, orderSummary]);
 
   // Скролл при переходе между страницами
   useEffect(() => {
@@ -213,6 +223,24 @@ const App: React.FC = () => {
             />
           </Suspense>
         );
+
+      case 'catalog': {
+        // Страница категории с SEO-friendly URL
+        const slug = 'slug' in route.params ? route.params.slug : '';
+        const categoryId = getIdBySlug(slug) || slug; // Fallback на slug как id
+        const h1 = getCategoryH1(slug);
+        
+        return (
+          <Suspense fallback={<PageLoader message="Загрузка каталога..." />}>
+            <Home
+              filters={{ ...filters, category: categoryId }}
+              onFiltersChange={handleFiltersChange}
+              onNavigate={navigate}
+              categoryH1={h1}
+            />
+          </Suspense>
+        );
+      }
 
       case 'product':
         return (
@@ -350,7 +378,7 @@ const App: React.FC = () => {
 
         <ToastStack toasts={toasts} onClose={handleCloseToast} />
 
-        {showScrollTop && route.name === 'home' && (
+        {showScrollTop && (route.name === 'home' || route.name === 'catalog') && (
           <button className="scroll-to-top" onClick={scrollToTop} aria-label="Наверх">
             <ChevronUp size={24} />
           </button>
