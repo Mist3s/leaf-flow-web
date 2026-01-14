@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 type Route =
   | { name: 'home'; params: {} }
+  | { name: 'catalog'; params: { slug: string } }
   | { name: 'product'; params: { id: string } }
   | { name: 'cart'; params: {} }
   | { name: 'checkout'; params: {} }
@@ -24,6 +25,10 @@ const parseRoute = (): Route => {
   if (path === '/privacy' || path === '/privacy/') return { name: 'privacy', params: {} };
   if (path === '/offer' || path === '/offer/') return { name: 'offer', params: {} };
   if (path === '/about' || path === '/about/') return { name: 'about', params: {} };
+  
+  // Каталог категории: /catalog/ulun/ или /catalog/shu-puer/
+  const catalogMatch = path.match(/^\/catalog\/([^/]+)\/?$/);
+  if (catalogMatch) return { name: 'catalog', params: { slug: catalogMatch[1] } };
   
   // Продукт: /product/123 или /product/123/
   const productMatch = path.match(/^\/product\/([^/]+)\/?$/);

@@ -36,6 +36,18 @@ const STATIC_PAGES = [
   { path: '/about/', changefreq: 'monthly', priority: '0.5' },
 ];
 
+// Страницы категорий (должны соответствовать src/utils/categories.ts)
+const CATEGORY_PAGES = [
+  { path: '/catalog/shu-puer/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/sheng-puer/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/ulun/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/krasnyj-chaj/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/zelenyj-chaj/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/belyj-chaj/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/chajnyj-napitok/', changefreq: 'daily', priority: '0.9' },
+  { path: '/catalog/posuda/', changefreq: 'daily', priority: '0.9' },
+];
+
 function generateSitemap(products) {
   const today = new Date().toISOString().split('T')[0];
 
@@ -44,6 +56,17 @@ function generateSitemap(products) {
 
   // Статические страницы
   for (const page of STATIC_PAGES) {
+    xml += `
+  <url>
+    <loc>${SITE_URL}${page.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+  }
+
+  // Страницы категорий
+  for (const page of CATEGORY_PAGES) {
     xml += `
   <url>
     <loc>${SITE_URL}${page.path}</loc>
@@ -78,7 +101,7 @@ async function main() {
   const outputPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
   await fs.writeFile(outputPath, sitemap, 'utf-8');
   console.log(`Sitemap generated at ${outputPath}`);
-  console.log(`Total URLs: ${products.length + STATIC_PAGES.length}`);
+  console.log(`Total URLs: ${products.length + STATIC_PAGES.length + CATEGORY_PAGES.length}`);
 }
 
 main().catch(console.error);
