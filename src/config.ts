@@ -4,7 +4,7 @@
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
-// API
+// API app-stage.zavarka39.ru or app.zavarka39.ru
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const API_BASE_URL = 'https://app.zavarka39.ru/api';
@@ -17,7 +17,7 @@ export const IMAGE_BASE_URL = 'https://app.zavarka39.ru';
 export const SITE_URL = 'https://zavarka39.ru';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Telegram
+// Telegram z39stage_bot or zavarka39_bot
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Username бота для Telegram Login Widget (без @) */
