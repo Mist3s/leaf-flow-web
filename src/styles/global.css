@@ -5262,11 +5262,7 @@ a {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-muted);
-  min-width: 65px;
-}
-
-.tea-brewing__stat:last-child {
-  min-width: 80px;
+  white-space: nowrap;
 }
 
 .tea-brewing__stat svg {
@@ -5364,7 +5360,8 @@ a {
 }
 
 .tea-info__note {
-  margin: 0.5rem 0 0;
+  margin-top: auto;
+  padding-top: 0.5rem;
   font-size: 0.7rem;
   color: var(--text-muted);
   line-height: 1.4;

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from 'react';
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package, Check, Loader2, Link2, Share2, Send, MessageCircle, Mail } from 'lucide-react';
 import { getProduct, listCategories, getReviews } from '../api';
-import { Product } from '../types/catalog';
+import { Product, ProductDetail } from '../types/catalog';
 import { CartItem } from '../types/cart';
+import { ToastItem } from '../components/Toast';
 import { ReviewsData } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
@@ -16,6 +17,7 @@ type Props = {
   onAdd: (product: Product, variant: Product['variants'][number], quantity: number) => void;
   onChangeQty: (productId: string, variantId: string, quantity: number) => void;
   cart: { items: CartItem[]; totalPrice: string; totalCount: number };
+  onShowToast: (toast: Omit<ToastItem, 'id'>) => void;
 };
 
 // Мемоизированный компонент варианта
@@ -42,9 +44,9 @@ const VariantButton = memo<{
 
 VariantButton.displayName = 'VariantButton';
 
-export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart }) => {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
+export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart, onShowToast }) => {
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [activeVariant, setActiveVariant] = useState<ProductDetail['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,10 +211,20 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
+      onShowToast({
+        message: 'Ссылка скопирована',
+        tone: 'success',
+        duration: 2000,
+      });
     } catch (err) {
       console.error('Failed to copy link:', err);
+      onShowToast({
+        message: 'Не удалось скопировать ссылку',
+        tone: 'error',
+        duration: 3000,
+      });
     }
-  }, []);
+  }, [onShowToast]);
 
   const handleShare = useCallback(async () => {
     if (navigator.share && product) {
@@ -404,8 +416,15 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
           )}
         </div>
 
-        {/* Tea Info Block */}
-        <TeaInfo />
+        {/* Tea Info Block - только для чая с атрибутами и профилями заваривания */}
+        {product.product_type_code === 'tea' && 
+         product.attributes.length > 0 && 
+         product.brewing_profiles.length > 0 && (
+          <TeaInfo 
+            brewingProfiles={product.brewing_profiles} 
+            attributes={product.attributes} 
+          />
+        )}
 
         {/* Description - full width section */}
         {product.description && (

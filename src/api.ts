@@ -1,6 +1,6 @@
 import { AuthResponse, AuthTokens, UserProfile, TelegramLoginWidgetPayload } from './types/auth';
 import { CartResponse } from './types/cart';
-import { Category, Product, ProductListResponse } from './types/catalog';
+import { Category, Product, ProductDetail, ProductListResponse } from './types/catalog';
 import { ReviewsData } from './types/reviews';
 import { API_BASE_URL, STORAGE_KEYS } from './config';
 
@@ -146,7 +146,7 @@ export const listProducts = (params: { category?: string; search?: string; limit
   return request<ProductListResponse>(`/v1/catalog/products?${qs.toString()}`);
 };
 
-export const getProduct = (id: string) => request<Product>(`/v1/catalog/products/${id}`);
+export const getProduct = (id: string) => request<ProductDetail>(`/v1/catalog/products/${id}`);
 export const getCart = () => request<CartResponse>('/v1/cart');
 export const replaceCartItems = (items: { productId: string; variantId: string; quantity: number }[]) =>
   request<CartResponse>('/v1/cart/items', { method: 'PUT', body: JSON.stringify({ items }) });

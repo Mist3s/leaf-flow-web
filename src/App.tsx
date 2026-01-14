@@ -250,6 +250,7 @@ const App: React.FC = () => {
               onNavigate={navigate}
               cart={cart}
               onChangeQty={changeQuantity}
+              onShowToast={pushToast}
               onAdd={(product, variant, quantity) =>
                 addToCart({
                   productId: product.id,
