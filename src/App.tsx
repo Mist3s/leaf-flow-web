@@ -25,6 +25,7 @@ const DeliveryPage = lazy(() => import('./pages/DeliveryPage').then(m => ({ defa
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const OfferPage = lazy(() => import('./pages/OfferPage').then(m => ({ default: m.OfferPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -91,6 +92,8 @@ const App: React.FC = () => {
         // Fallback если категория не найдена
         updateSEO(SEO_PAGES.home);
       }
+    } else if (route.name === 'notfound') {
+      updateSEO(SEO_PAGES.notfound);
     } else if (SEO_PAGES[routeName]) {
       updateSEO(SEO_PAGES[routeName]);
     } else if (route.name === 'product') {
@@ -347,14 +350,17 @@ const App: React.FC = () => {
           </Suspense>
         );
 
+      case 'notfound':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage onNavigate={navigate} />
+          </Suspense>
+        );
+
       default:
         return (
-          <Suspense fallback={<PageLoader message="Загрузка каталога..." />}>
-            <Home
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onNavigate={navigate}
-            />
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage onNavigate={navigate} />
           </Suspense>
         );
     }

@@ -11,7 +11,8 @@ type Route =
   | { name: 'delivery'; params: {} }
   | { name: 'privacy'; params: {} }
   | { name: 'offer'; params: {} }
-  | { name: 'about'; params: {} };
+  | { name: 'about'; params: {} }
+  | { name: 'notfound'; params: {} };
 
 const parseRoute = (): Route => {
   const path = window.location.pathname || '/';
@@ -34,7 +35,8 @@ const parseRoute = (): Route => {
   const productMatch = path.match(/^\/product\/([^/]+)\/?$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
   
-  return { name: 'home', params: {} };
+  // Любой неизвестный путь — 404
+  return { name: 'notfound', params: {} };
 };
 
 export const useRoute = (): [Route, (path: string) => void] => {
