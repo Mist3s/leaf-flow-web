@@ -7,7 +7,7 @@
 // API
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const API_BASE_URL = 'https://app-stage.zavarka39.ru/api';
+export const API_BASE_URL = 'https://app.zavarka39.ru/api';
 export const IMAGE_BASE_URL = 'https://app.zavarka39.ru';
 
 // ═══════════════════════════════════════════════════════════════════════════
