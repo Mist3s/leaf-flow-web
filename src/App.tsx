@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [productNotFound, setProductNotFound] = useState(false);
   const prevRouteRef = useRef(route.name);
   const homeScrollRef = useRef(0);
   const forceScrollTopRef = useRef(false);
@@ -77,6 +78,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const routeName = route.name as keyof typeof SEO_PAGES;
     
+    // Если продукт не найден — показываем SEO для 404
+    if (route.name === 'product' && productNotFound) {
+      updateSEO(SEO_PAGES.notfound);
+      return;
+    }
+    
     if (routeName === 'checkout' && orderSummary) {
       updateSEO({
         title: 'Заказ оформлен — Zavarka39',
@@ -101,7 +108,7 @@ const App: React.FC = () => {
     } else {
       updateSEO(SEO_PAGES.home);
     }
-  }, [route.name, route.params && 'slug' in route.params ? route.params.slug : null, orderSummary]);
+  }, [route.name, route.params && 'slug' in route.params ? route.params.slug : null, orderSummary, productNotFound]);
 
   // Скролл при переходе между страницами
   useEffect(() => {
@@ -179,6 +186,11 @@ const App: React.FC = () => {
     if (route.name !== 'checkout') setOrderSummary(null);
   }, [route.name]);
 
+  // Сбрасываем productNotFound при смене роута или id продукта
+  useEffect(() => {
+    setProductNotFound(false);
+  }, [route.name, route.params && 'id' in route.params ? route.params.id : null]);
+
   const handleLogout = useCallback(() => {
     logout();
     reset();
@@ -246,6 +258,14 @@ const App: React.FC = () => {
       }
 
       case 'product':
+        // Если продукт не найден — показываем 404
+        if (productNotFound) {
+          return (
+            <Suspense fallback={<PageLoader />}>
+              <NotFoundPage onNavigate={navigate} />
+            </Suspense>
+          );
+        }
         return (
           <Suspense fallback={<PageLoader message="Загрузка товара..." />}>
             <ProductPage
@@ -254,6 +274,7 @@ const App: React.FC = () => {
               cart={cart}
               onChangeQty={changeQuantity}
               onShowToast={pushToast}
+              onNotFound={() => setProductNotFound(true)}
               onAdd={(product, variant, quantity) =>
                 addToCart({
                   productId: product.id,

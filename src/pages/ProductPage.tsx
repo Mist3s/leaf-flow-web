@@ -19,6 +19,7 @@ type Props = {
   onChangeQty: (productId: string, variantId: string, quantity: number) => void;
   cart: { items: CartItem[]; totalPrice: string; totalCount: number };
   onShowToast: (toast: Omit<ToastItem, 'id'>) => void;
+  onNotFound?: () => void;
 };
 
 // Мемоизированный компонент варианта
@@ -45,7 +46,7 @@ const VariantButton = memo<{
 
 VariantButton.displayName = 'VariantButton';
 
-export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart, onShowToast }) => {
+export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart, onShowToast, onNotFound }) => {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [activeVariant, setActiveVariant] = useState<ProductDetail['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -135,6 +136,10 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
       .catch(() => {
         setError('Не удалось загрузить товар');
         setLoading(false);
+        // Вызываем callback для показа 404 страницы
+        if (onNotFound) {
+          onNotFound();
+        }
       });
     
     // Очищаем динамические схемы при уходе со страницы
