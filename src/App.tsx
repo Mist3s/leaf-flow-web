@@ -150,10 +150,10 @@ const App: React.FC = () => {
     setAuthModalOpen(false);
   }, []);
 
-  const addToCart = useCallback((payload: Omit<CartItem, 'productName' | 'variantLabel' | 'price'> & {
+  const addToCart = useCallback((payload: Omit<CartItem, 'productName' | 'variantWeight' | 'price' | 'total'> & {
     price: string;
     productName: string;
-    variantLabel: string;
+    variantWeight: string;
     image?: string;
   }) => {
     if (!auth.user) {
@@ -167,10 +167,10 @@ const App: React.FC = () => {
       });
       return;
     }
-    addItem(payload);
+    addItem({ ...payload, total: payload.price });
     pushToast({
       tone: 'success',
-      message: `${payload.productName} (${payload.variantLabel}) добавлен в корзину.`,
+      message: `${payload.productName} (${payload.variantWeight}) добавлен в корзину.`,
       actions: [{ label: 'Открыть корзину', onClick: () => navigate('/cart') }],
     });
   }, [auth.user, addItem, pushToast, openAuth, navigate]);
@@ -282,7 +282,7 @@ const App: React.FC = () => {
                   quantity,
                   price: variant.price,
                   productName: product.name,
-                  variantLabel: variant.weight,
+                  variantWeight: variant.weight,
                   image: product.image,
                 })
               }

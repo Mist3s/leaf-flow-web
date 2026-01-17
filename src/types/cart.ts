@@ -3,8 +3,9 @@ export type CartItem = {
   variantId: string;
   quantity: number;
   price: string;
+  total: string;
   productName: string;
-  variantLabel: string;
+  variantWeight: string;
   image?: string;
 };
 

@@ -422,7 +422,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
                   />
                   <div className="checkout-summary__item-info">
                     <span className="checkout-summary__item-name">{item.productName}</span>
-                    <span className="checkout-summary__item-variant">{item.variantLabel}</span>
+                    <span className="checkout-summary__item-variant">{item.variantWeight}</span>
                   </div>
                   <div className="checkout-summary__item-right">
                     <span className="checkout-summary__item-qty">× {item.quantity}</span>

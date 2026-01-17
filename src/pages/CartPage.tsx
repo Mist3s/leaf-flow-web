@@ -103,7 +103,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
                 <div className="cart-item__top">
                   <div className="cart-item__info">
                     <h3 className="cart-item__name">{item.productName}</h3>
-                    <span className="cart-item__variant">{item.variantLabel}</span>
+                    <span className="cart-item__variant">{item.variantWeight}</span>
               </div>
                   <button
                     className="cart-item__remove"
