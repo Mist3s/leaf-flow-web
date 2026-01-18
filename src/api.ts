@@ -298,7 +298,7 @@ const PLATFORM_CONFIG: Record<'yandex' | 'google' | 'telegram' | 'avito', { icon
   },
   google: {
     iconUrl: '/icon/google_icon.svg',
-    reviewsUrl: '#',
+    reviewsUrl: 'https://g.page/r/CbZTi645XHMyEBM/review',
   },
   telegram: {
     iconUrl: '/icon/tg_icon.svg',
