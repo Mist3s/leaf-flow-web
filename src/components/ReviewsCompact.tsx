@@ -1,9 +1,15 @@
 import React, { memo } from 'react';
 import { Star } from 'lucide-react';
-import { ReviewsData } from '../types/reviews';
+import { PlatformRating } from '../types/reviews';
+
+type ReviewsStatsData = {
+  averageRating: number;
+  totalReviews: number;
+  platforms: PlatformRating[];
+};
 
 type Props = {
-  data: ReviewsData | null;
+  data: ReviewsStatsData | null;
   loading?: boolean;
 };
 

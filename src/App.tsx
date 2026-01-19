@@ -25,6 +25,7 @@ const DeliveryPage = lazy(() => import('./pages/DeliveryPage').then(m => ({ defa
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const OfferPage = lazy(() => import('./pages/OfferPage').then(m => ({ default: m.OfferPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [productNotFound, setProductNotFound] = useState(false);
   const prevRouteRef = useRef(route.name);
   const homeScrollRef = useRef(0);
   const forceScrollTopRef = useRef(false);
@@ -76,6 +78,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const routeName = route.name as keyof typeof SEO_PAGES;
     
+    // Если продукт не найден — показываем SEO для 404
+    if (route.name === 'product' && productNotFound) {
+      updateSEO(SEO_PAGES.notfound);
+      return;
+    }
+    
     if (routeName === 'checkout' && orderSummary) {
       updateSEO({
         title: 'Заказ оформлен — Zavarka39',
@@ -91,6 +99,8 @@ const App: React.FC = () => {
         // Fallback если категория не найдена
         updateSEO(SEO_PAGES.home);
       }
+    } else if (route.name === 'notfound') {
+      updateSEO(SEO_PAGES.notfound);
     } else if (SEO_PAGES[routeName]) {
       updateSEO(SEO_PAGES[routeName]);
     } else if (route.name === 'product') {
@@ -98,7 +108,7 @@ const App: React.FC = () => {
     } else {
       updateSEO(SEO_PAGES.home);
     }
-  }, [route.name, route.params && 'slug' in route.params ? route.params.slug : null, orderSummary]);
+  }, [route.name, route.params && 'slug' in route.params ? route.params.slug : null, orderSummary, productNotFound]);
 
   // Скролл при переходе между страницами
   useEffect(() => {
@@ -140,10 +150,10 @@ const App: React.FC = () => {
     setAuthModalOpen(false);
   }, []);
 
-  const addToCart = useCallback((payload: Omit<CartItem, 'productName' | 'variantLabel' | 'price'> & {
+  const addToCart = useCallback((payload: Omit<CartItem, 'productName' | 'variantWeight' | 'price' | 'total'> & {
     price: string;
     productName: string;
-    variantLabel: string;
+    variantWeight: string;
     image?: string;
   }) => {
     if (!auth.user) {
@@ -157,10 +167,10 @@ const App: React.FC = () => {
       });
       return;
     }
-    addItem(payload);
+    addItem({ ...payload, total: payload.price });
     pushToast({
       tone: 'success',
-      message: `${payload.productName} (${payload.variantLabel}) добавлен в корзину.`,
+      message: `${payload.productName} (${payload.variantWeight}) добавлен в корзину.`,
       actions: [{ label: 'Открыть корзину', onClick: () => navigate('/cart') }],
     });
   }, [auth.user, addItem, pushToast, openAuth, navigate]);
@@ -175,6 +185,11 @@ const App: React.FC = () => {
   useEffect(() => {
     if (route.name !== 'checkout') setOrderSummary(null);
   }, [route.name]);
+
+  // Сбрасываем productNotFound при смене роута или id продукта
+  useEffect(() => {
+    setProductNotFound(false);
+  }, [route.name, route.params && 'id' in route.params ? route.params.id : null]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -243,6 +258,14 @@ const App: React.FC = () => {
       }
 
       case 'product':
+        // Если продукт не найден — показываем 404
+        if (productNotFound) {
+          return (
+            <Suspense fallback={<PageLoader />}>
+              <NotFoundPage onNavigate={navigate} />
+            </Suspense>
+          );
+        }
         return (
           <Suspense fallback={<PageLoader message="Загрузка товара..." />}>
             <ProductPage
@@ -251,6 +274,7 @@ const App: React.FC = () => {
               cart={cart}
               onChangeQty={changeQuantity}
               onShowToast={pushToast}
+              onNotFound={() => setProductNotFound(true)}
               onAdd={(product, variant, quantity) =>
                 addToCart({
                   productId: product.id,
@@ -258,7 +282,7 @@ const App: React.FC = () => {
                   quantity,
                   price: variant.price,
                   productName: product.name,
-                  variantLabel: variant.weight,
+                  variantWeight: variant.weight,
                   image: product.image,
                 })
               }
@@ -347,14 +371,17 @@ const App: React.FC = () => {
           </Suspense>
         );
 
+      case 'notfound':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage onNavigate={navigate} />
+          </Suspense>
+        );
+
       default:
         return (
-          <Suspense fallback={<PageLoader message="Загрузка каталога..." />}>
-            <Home
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onNavigate={navigate}
-            />
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage onNavigate={navigate} />
           </Suspense>
         );
     }

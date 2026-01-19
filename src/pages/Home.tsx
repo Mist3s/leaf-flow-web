@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react';
 import { Search, Package, Loader2, Send, Smartphone, Phone } from 'lucide-react';
-import { listCategories, listProducts, getReviews } from '../api';
+import { listCategories, listProducts, getReviewsStats } from '../api';
 import { Product } from '../types/catalog';
-import { ReviewsData } from '../types/reviews';
+import { PlatformRating } from '../types/reviews';
 import { formatCurrency, getImageUrl } from '../utils/format';
 import { ReviewsCompact } from '../components/ReviewsCompact';
 import { getSlugById, getCategoryById } from '../utils/categories';
@@ -123,7 +123,7 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
   const [products, setProducts] = useState<Product[]>(hasCachedData ? cache.products : []);
   const [categories, setCategories] = useState<{ id: string; label: string }[]>(cache.categories);
   const [loading, setLoading] = useState(!hasCachedData);
-  const [reviewsData, setReviewsData] = useState<ReviewsData | null>(null);
+  const [reviewsData, setReviewsData] = useState<{ averageRating: number; totalReviews: number; platforms: PlatformRating[] } | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
   // Маппинг id -> label для быстрого поиска
@@ -153,9 +153,9 @@ export const Home: React.FC<Props> = memo(({ filters, onFiltersChange, onNavigat
       .catch(() => setCategories([]));
   }, []);
 
-  // Загрузка отзывов
+  // Загрузка статистики отзывов (без списка отзывов — легче)
   useEffect(() => {
-    getReviews()
+    getReviewsStats()
       .then((data) => {
         setReviewsData(data);
         setReviewsLoading(false);

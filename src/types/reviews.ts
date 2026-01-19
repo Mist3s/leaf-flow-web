@@ -24,4 +24,3 @@ export interface ReviewsData {
   platforms: PlatformRating[];
   reviews: Review[];
 }
-

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { getCart, replaceCartItems, getProduct } from '../api';
+import { getCart, replaceCartItems } from '../api';
 import { CartItem } from '../types/cart';
 import { formatCurrency } from '../utils/format';
 
@@ -36,12 +36,13 @@ export const useCart = (hasAuth: boolean) => {
         const remote = await getCart();
         if (cancelled) return;
 
-        // Дозагружаем информацию о продуктах (название, фото, вес)
-        const enrichedItems = await enrichCartItems(remote.items);
-        if (cancelled) return;
-
-        const computed = computeCart(enrichedItems);
-        setCart({ ...computed, loading: false, error: null });
+        setCart({
+          items: remote.items,
+          totalPrice: remote.totalPrice,
+          totalCount: remote.totalCount,
+          loading: false,
+          error: null,
+        });
       } catch (error) {
         if (!cancelled) setCart((p) => ({ ...p, loading: false, error: 'Не удалось загрузить корзину' }));
       }
@@ -59,51 +60,6 @@ export const useCart = (hasAuth: boolean) => {
       }
     };
   }, []);
-
-  // Загружаем данные о продуктах для элементов корзины
-  const enrichCartItems = async (items: CartItem[]): Promise<CartItem[]> => {
-    // Получаем уникальные productId
-    const uniqueProductIds = [...new Set(items.map((item) => item.productId))];
-
-    // Загружаем все продукты параллельно
-    const productsMap = new Map<string, { name: string; image?: string; variants: { id: string; weight: string; price: string }[] }>();
-
-    await Promise.all(
-      uniqueProductIds.map(async (productId) => {
-        try {
-          const product = await getProduct(productId);
-          productsMap.set(productId, {
-            name: product.name,
-            image: product.image,
-            variants: product.variants,
-          });
-    } catch (error) {
-          console.warn(`Не удалось загрузить продукт ${productId}`, error);
-        }
-      }),
-    );
-
-    // Обогащаем элементы корзины данными о продуктах
-    return items.map((item) => {
-      const product = productsMap.get(item.productId);
-      if (!product) {
-        return {
-          ...item,
-          productName: item.productName || 'Товар недоступен',
-          variantLabel: item.variantLabel || '',
-        };
-      }
-
-      const variant = product.variants.find((v) => v.id === item.variantId);
-      return {
-        ...item,
-        productName: item.productName || product.name,
-        variantLabel: item.variantLabel || variant?.weight || '',
-        image: item.image || product.image,
-        price: item.price || variant?.price || '0',
-      };
-    });
-  };
 
   // Debounced sync с защитой от параллельных вызовов
   const debouncedSync = useCallback(

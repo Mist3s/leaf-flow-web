@@ -264,207 +264,102 @@ export type SetEmailPayload = {
 export const setEmail = (payload: SetEmailPayload) =>
   request<UserProfile>('/v1/auth/email', { method: 'POST', body: JSON.stringify(payload) });
 
-// Мок-данные для отзывов (будет заменено на API-эндпоинт)
-const mockReviewsData: ReviewsData = {
-  averageRating: 5.0,
-  totalReviews: 23,
-  platforms: [
-    { platform: 'yandex', rating: 5.0, reviewCount: 2, iconUrl: '/icon/yandex_icon.svg', reviewsUrl: 'https://yandex.ru/maps/org/zavarka39_kitayskiy_chay/136643377826?si=f6gx50r3r16h0uuh3qv5prfrk4' },
-    { platform: 'google', rating: 0.0, reviewCount: 0, iconUrl: '/icon/google_icon.svg', reviewsUrl: '#' },
-    { platform: 'telegram', rating: 5.0, reviewCount: 3, iconUrl: '/icon/tg_icon.svg', reviewsUrl: 'https://t.me/zavarka39_ru' },
-    { platform: 'avito', rating: 5.0, reviewCount: 18, iconUrl: '/icon/avito_icon.svg', reviewsUrl: 'https://www.avito.ru/brands/496c10b485c0cc17027cc587d150d0d1' },
-  ],
-  reviews: [
-    {
-      id: '23',
-      platform: 'yandex',
-      author: 'Анна Р.',
-      rating: 5,
-      text: 'Огромное спасибо вам за помощь в подборе чая для подарка. Для меня это то было очень важно, так как человек, которому предназначен подарок, пьёт только чай. Желаю вам дальнейшего развития и благополучия.',
-      date: '2026-01-10',
-    },
-    {
-      id: '22',
-      platform: 'yandex',
-      author: 'kir-dacha2014',
-      rating: 5,
-      text: 'Отличный сайт и очень вкусный чай🔥',
-      date: '2026-01-09',
-    },
-    {
-      id: '1',
-      platform: 'avito',
-      author: 'Елена',
-      rating: 5,
-      text: 'Советую продавца, все чётко, чай хороший 👍',
-      date: '2026-01-03',
-    },
-    {
-      id: '2',
-      platform: 'avito',
-      author: 'Анастасия',
-      rating: 5,
-      text: 'Все отлично, спасибо',
-      date: '2025-12-27',
-    },
-    {
-      id: '3',
-      platform: 'avito',
-      author: 'Ирина Р.',
-      rating: 5,
-      text: 'Спасибо огромное\nСупер чай. Но брала в подарок, поэтому вкус оценить не могу. По запаху, понятно, что супер.\nСупер продавец. Отправил быстро, был всегда на связи. На сообщения отвечал быстро\nБлагодарю 🙏',
-      date: '2025-12-21',
-    },
-    {
-      id: '4',
-      platform: 'avito',
-      author: 'Сергей',
-      rating: 5,
-      text: 'Советую !',
-      date: '2025-12-08',
-    },
-    {
-      id: '5',
-      platform: 'avito',
-      author: 'Лаванда',
-      rating: 5,
-      text: 'Супер бодряк!!♥️♥️♥️',
-      date: '2025-10-22',
-    },
-    {
-      id: '6',
-      platform: 'avito',
-      author: 'Айрат',
-      rating: 5,
-      text: 'Всё отлично!',
-      date: '2025-09-13',
-    },
-    {
-      id: '7',
-      platform: 'avito',
-      author: 'Максим С.',
-      rating: 5,
-      text: 'Все хорошо,товар в порядке,ещё и на пробу несколько других сортов чая прислали.',
-      date: '2025-05-31',
-    },
-    {
-      id: '8',
-      platform: 'avito',
-      author: 'Carattere',
-      rating: 5,
-      text: 'Спасибо😊Всё прошло хорошо\nИ подарочки положили😘',
-      date: '2025-05-08',
-    },
-    {
-      id: '9',
-      platform: 'avito',
-      author: 'Вячеслав В.',
-      rating: 5,
-      text: 'Прекрасный продавец, прекрасный товар, рекомендую!',
-      date: '2025-03-28',
-    },
-    {
-      id: '10',
-      platform: 'avito',
-      author: 'Александр К.',
-      rating: 5,
-      text: 'Хороший продавец',
-      date: '2025-02-10',
-    },
-    {
-      id: '11',
-      platform: 'avito',
-      author: 'Владимир',
-      rating: 5,
-      text: 'Рекомендую продавца 👍\nПродукт соответствует действительности\nПродавец доброжелателен',
-      date: '2025-01-27',
-    },
-    {
-      id: '12',
-      platform: 'avito',
-      author: 'Сергей',
-      rating: 5,
-      text: 'Чай просто великолепный, энергия ЦИ ощущается очень мягко, приятно и полезно!) Продавец описал, как правильно пить и заваривать чай, чтоб получить максимум пользы. Очень душевный продавец, понравилось общение, подход к покупателю и сам продукт!)',
-      date: '2025-01-18',
-    },
-    {
-      id: '13',
-      platform: 'avito',
-      author: 'Наталья',
-      rating: 5,
-      text: 'Шикарный, насыщенный и ароматный чай! Очень компетентный продавец, все подсказал и рассказал, приятно иметь дело! Однозначно рекомендую!',
-      date: '2024-10-26',
-    },
-    {
-      id: '14',
-      platform: 'avito',
-      author: 'Павел',
-      rating: 5,
-      text: 'Всё отлично.Чай хороший👍',
-      date: '2024-10-16',
-    },
-    {
-      id: '15',
-      platform: 'avito',
-      author: 'Руслан',
-      rating: 5,
-      text: 'Товар соответствует. Плюс подарок на пробу. Обязательно обращусь ещё 👍',
-      date: '2024-08-19',
-    },
-    {
-      id: '16',
-      platform: 'avito',
-      author: 'Покупатель',
-      rating: 5,
-      text: 'Хороший вежливый продавец. \nХороший чай.\nСписались, договорились. В назначенное время подъехала и встретились. \nВсе понравилось. Буду брать еще.',
-      date: '2024-08-10',
-    },
-    {
-      id: '17',
-      platform: 'avito',
-      author: 'Ангелина',
-      rating: 5,
-      text: 'Спасибо большое, габа обалденная, обязательно буду покупать ещё ♥️\nОчень приятно было общаться, продавец общительный и внимательный 😊',
-      date: '2024-07-02',
-    },
-    {
-      id: '18',
-      platform: 'avito',
-      author: 'JuD',
-      rating: 5,
-      text: 'Благодарю, чай зашёл ❤️ обязательно будем обращаться 🌞🙏👍',
-      date: '2024-05-07',
-    },
-    {
-      id: '19',
-      platform: 'telegram',
-      author: 'Леночка',
-      rating: 5,
-      text: 'Чай великолепного качества, продавцы очень грамотные, знающие свое дело.',
-      date: '2025-03-26',
-    },
-    {
-      id: '20',
-      platform: 'telegram',
-      author: 'Сергей Д.',
-      rating: 5,
-      text: '🔥',
-      date: '2025-05-03',
-    },
-    {
-      id: '21',
-      platform: 'telegram',
-      author: 'Татьяна И.',
-      rating: 5,
-      text: 'Чай просто бомбический👍👏🙏',
-      date: '2025-10-11',
-    },
-  ],
+// Типы ответа API для отзывов
+interface ApiExternalReviewsStats {
+  platform: 'yandex' | 'google' | 'telegram' | 'avito';
+  avg_rating: number;
+  reviews_count: number;
+}
+
+interface ApiExternalReview {
+  id: number;
+  platform: 'yandex' | 'google' | 'telegram' | 'avito';
+  author: string;
+  rating: number;
+  text: string;
+  date: string;
+}
+
+interface ApiReviewsStatsResponse {
+  platforms: ApiExternalReviewsStats[];
+  total_count: number;
+  overall_avg: number;
+}
+
+interface ApiReviewsFullResponse extends ApiReviewsStatsResponse {
+  reviews: ApiExternalReview[];
+}
+
+// Статичные данные платформ (иконки и ссылки)
+const PLATFORM_CONFIG: Record<'yandex' | 'google' | 'telegram' | 'avito', { iconUrl: string; reviewsUrl: string }> = {
+  yandex: {
+    iconUrl: '/icon/yandex_icon.svg',
+    reviewsUrl: 'https://yandex.ru/maps/org/zavarka39_kitayskiy_chay/136643377826?si=f6gx50r3r16h0uuh3qv5prfrk4',
+  },
+  google: {
+    iconUrl: '/icon/google_icon.svg',
+    reviewsUrl: 'https://g.page/r/CbZTi645XHMyEBM/review',
+  },
+  telegram: {
+    iconUrl: '/icon/tg_icon.svg',
+    reviewsUrl: 'https://t.me/zavarka39_ru',
+  },
+  avito: {
+    iconUrl: '/icon/avito_icon.svg',
+    reviewsUrl: 'https://www.avito.ru/brands/496c10b485c0cc17027cc587d150d0d1',
+  },
 };
 
-export const getReviews = (): Promise<ReviewsData> => {
-  // TODO: Заменить на реальный API-эндпоинт
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockReviewsData), 300);
+const ALL_PLATFORMS: Array<'yandex' | 'google' | 'telegram' | 'avito'> = ['yandex', 'google', 'telegram', 'avito'];
+
+// Преобразование ответа API к формату фронтенда
+const mapApiPlatformsToFrontend = (apiPlatforms: ApiExternalReviewsStats[]) => {
+  const platformMap = new Map(apiPlatforms.map((p) => [p.platform, p]));
+
+  return ALL_PLATFORMS.map((platform) => {
+    const apiData = platformMap.get(platform);
+    const config = PLATFORM_CONFIG[platform];
+
+    return {
+      platform,
+      rating: apiData?.avg_rating ?? 0.0,
+      reviewCount: apiData?.reviews_count ?? 0,
+      iconUrl: config.iconUrl,
+      reviewsUrl: config.reviewsUrl,
+    };
   });
+};
+
+const mapApiReviewToFrontend = (apiReview: ApiExternalReview) => ({
+  id: String(apiReview.id),
+  platform: apiReview.platform,
+  author: apiReview.author,
+  rating: apiReview.rating,
+  text: apiReview.text,
+  date: apiReview.date,
+});
+
+// Получение полных данных отзывов (статистика + список отзывов)
+export const getReviews = async (): Promise<ReviewsData> => {
+  const res = await fetch(`${API_BASE}/v1/reviews/external`);
+  const data = await readJSON<ApiReviewsFullResponse>(res);
+
+  return {
+    averageRating: data.overall_avg,
+    totalReviews: data.total_count,
+    platforms: mapApiPlatformsToFrontend(data.platforms),
+    reviews: data.reviews.map(mapApiReviewToFrontend),
+  };
+};
+
+// Получение только статистики отзывов (для главной страницы, если нужна лёгкая загрузка)
+export const getReviewsStats = async (): Promise<Omit<ReviewsData, 'reviews'>> => {
+  const res = await fetch(`${API_BASE}/v1/reviews/external/stats`);
+  const data = await readJSON<ApiReviewsStatsResponse>(res);
+
+  return {
+    averageRating: data.overall_avg,
+    totalReviews: data.total_count,
+    platforms: mapApiPlatformsToFrontend(data.platforms),
+  };
 };

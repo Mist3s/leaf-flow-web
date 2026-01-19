@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getCategoryBySlug } from '../utils/categories';
 
 type Route =
   | { name: 'home'; params: {} }
@@ -11,7 +12,8 @@ type Route =
   | { name: 'delivery'; params: {} }
   | { name: 'privacy'; params: {} }
   | { name: 'offer'; params: {} }
-  | { name: 'about'; params: {} };
+  | { name: 'about'; params: {} }
+  | { name: 'notfound'; params: {} };
 
 const parseRoute = (): Route => {
   const path = window.location.pathname || '/';
@@ -27,14 +29,24 @@ const parseRoute = (): Route => {
   if (path === '/about' || path === '/about/') return { name: 'about', params: {} };
   
   // Каталог категории: /catalog/ulun/ или /catalog/shu-puer/
+  // Проверяем существование категории
   const catalogMatch = path.match(/^\/catalog\/([^/]+)\/?$/);
-  if (catalogMatch) return { name: 'catalog', params: { slug: catalogMatch[1] } };
+  if (catalogMatch) {
+    const slug = catalogMatch[1];
+    const category = getCategoryBySlug(slug);
+    if (category) {
+      return { name: 'catalog', params: { slug } };
+    }
+    // Категория не найдена — 404
+    return { name: 'notfound', params: {} };
+  }
   
   // Продукт: /product/123 или /product/123/
   const productMatch = path.match(/^\/product\/([^/]+)\/?$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
   
-  return { name: 'home', params: {} };
+  // Любой неизвестный путь — 404
+  return { name: 'notfound', params: {} };
 };
 
 export const useRoute = (): [Route, (path: string) => void] => {
