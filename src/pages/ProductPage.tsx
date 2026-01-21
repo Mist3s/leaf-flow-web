@@ -5,12 +5,13 @@ import { Product, ProductDetail } from '../types/catalog';
 import { CartItem } from '../types/cart';
 import { ToastItem } from '../components/Toast';
 import { ReviewsData } from '../types/reviews';
-import { formatCurrency, getImageUrl } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
 import { MarkdownContent } from '../components/MarkdownContent';
 import { ReviewsBlock } from '../components/ReviewsBlock';
 import { TeaInfo } from '../components/TeaInfo';
 import { ShopBadges } from '../components/ShopBadges';
+import { ProductGallery } from '../components/ProductGallery';
 
 type Props = {
   id: string;
@@ -364,21 +365,13 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
       </div>
 
       <div className="pdp-layout">
-        {/* Image */}
-        <div className="pdp-gallery">
-          <div className="pdp-gallery__main">
-            <img 
-              src={getImageUrl(product.image)} 
-              alt={product.name} 
-              className="pdp-gallery__image"
-              loading="eager"
-              decoding="async"
-            />
-            {product.category && categoryMap.get(product.category) && (
-              <span className="pdp-gallery__category">{categoryMap.get(product.category)}</span>
-            )}
-          </div>
-        </div>
+        {/* Image Gallery */}
+        <ProductGallery
+          mainImage={product.image}
+          images={product.images}
+          productName={product.name}
+          categoryLabel={product.category ? categoryMap.get(product.category) : undefined}
+        />
 
         {/* Info */}
         <div className="pdp-info">

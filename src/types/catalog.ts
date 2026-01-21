@@ -61,6 +61,16 @@ export type ProductAttribute = {
   values: ProductAttributeValue[];
 };
 
+// Изображение продукта
+export type ProductImage = {
+  id: number;
+  product_id: string;
+  title: string;
+  image_url: string;
+  is_active: boolean;
+  sort_order: number;
+};
+
 // Детальная информация о продукте
 export type ProductDetail = Product & {
   variants: ProductVariantOut[];
@@ -71,6 +81,7 @@ export type ProductDetail = Product & {
   updated_at: string;
   sort_order: number;
   brewing_profiles: BrewProfile[];
+  images: ProductImage[];
 };
 
 export type Category = {
