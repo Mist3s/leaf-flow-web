@@ -1,6 +1,13 @@
 {
   "rewrites": [
-    { "source": "/((?!api|_next|sitemap.xml|robots.txt|logo.png|favicon.ico).*)", "destination": "/index.html" }
+    { "source": "/((?!api|_next|sitemap.xml|robots.txt|logo.png|favicon.ico|404.html).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/404.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    }
   ]
 }
-

@@ -39,6 +39,7 @@ COPY . .
 
 # Собираем приложение с pre-rendering
 RUN npm run build:prerender
+#RUN npm run build
 
 # --- PROD 2: финальный образ nginx ---
 FROM nginx:1.25-alpine
