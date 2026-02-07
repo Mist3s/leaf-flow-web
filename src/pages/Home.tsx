@@ -3,7 +3,7 @@ import { Search, Package, Loader2, Send, Smartphone, Phone } from 'lucide-react'
 import { listCategories, listProducts, getReviewsStats } from '../api';
 import { Product } from '../types/catalog';
 import { PlatformRating } from '../types/reviews';
-import { formatCurrency, getImageUrl } from '../utils/format';
+import { formatCurrency, getImageUrl, getProductImageUrl } from '../utils/format';
 import { ReviewsCompact } from '../components/ReviewsCompact';
 import { getSlugById, getCategoryById } from '../utils/categories';
 
@@ -66,7 +66,7 @@ const ProductCard = memo<{
     >
       <div className="product-card__image-wrap">
         <img 
-          src={getImageUrl(product.image)} 
+          src={getImageUrl(getProductImageUrl(product.images, 'md', product.image))} 
           alt={product.name} 
           loading="lazy" 
           decoding="async"

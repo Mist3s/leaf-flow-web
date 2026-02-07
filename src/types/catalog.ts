@@ -12,6 +12,7 @@ export type Product = {
   tags: string[];
   image: string;
   variants: ProductVariant[];
+  images?: ProductImage[];
 };
 
 // Расширенный вариант для детальной страницы
@@ -61,14 +62,27 @@ export type ProductAttribute = {
   values: ProductAttributeValue[];
 };
 
+// Вариант размера изображения (thumb, md, lg, original)
+export type ImageVariant = {
+  id: number;
+  product_image_id: number;
+  variant: 'original' | 'thumb' | 'md' | 'lg';
+  format: string;
+  storage_key: string;
+  width: number;
+  height: number;
+  byte_size: number;
+};
+
 // Изображение продукта
 export type ProductImage = {
   id: number;
   product_id: string;
   title: string;
-  image_url: string;
+  image_url: string | null;
   is_active: boolean;
   sort_order: number;
+  variants: ImageVariant[];
 };
 
 // Детальная информация о продукте

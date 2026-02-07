@@ -5,7 +5,7 @@ import { Product, ProductDetail } from '../types/catalog';
 import { CartItem } from '../types/cart';
 import { ToastItem } from '../components/Toast';
 import { ReviewsData } from '../types/reviews';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, getProductImageUrl } from '../utils/format';
 import { updateSEO, updateProductSchema, updateBreadcrumbSchema, clearDynamicSchemas } from '../utils/seo';
 import { MarkdownContent } from '../components/MarkdownContent';
 import { ReviewsBlock } from '../components/ReviewsBlock';
@@ -118,15 +118,23 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
     setLoading(true);
     setError(null);
     
-    // Устанавливаем временный title сразу при загрузке страницы продукта
-    // Это поможет поисковым системам видеть более релевантный title
-    // Title будет обновлен после загрузки данных о продукте
-    updateSEO({
-      title: 'Китайский чай — купить в Калининграде | Zavarka39',
-      description: 'Купить китайский чай в Калининграде с доставкой. Премиальный чай из Китая: пуэр, улун, зелёный, белый чай.',
-      canonical: `/product/${id}/`,
-      type: 'product',
-    });
+    // НЕ перезаписываем SEO если страница уже prerendered с правильным title
+    // Проверяем: если title содержит "купить в Калининграде" и НЕ является дефолтным —
+    // значит это prerendered страница с уникальным названием товара
+    const currentTitle = document.title;
+    const isPrerendered = currentTitle.includes('купить в Калининграде') && 
+                          !currentTitle.startsWith('Китайский чай —') &&
+                          !currentTitle.startsWith('Zavarka39');
+    
+    if (!isPrerendered) {
+      // Только для SPA-навигации устанавливаем временный title с ID продукта
+      updateSEO({
+        title: `Загрузка товара #${id}... — Zavarka39`,
+        description: 'Купить китайский чай в Калининграде с доставкой. Премиальный чай из Китая: пуэр, улун, зелёный, белый чай.',
+        canonical: `/product/${id}/`,
+        type: 'product',
+      });
+    }
     
     getProduct(id)
       .then((res) => {
@@ -157,6 +165,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         : 0;
       const priceText = minPrice > 0 ? `от ${formatCurrency(minPrice)}` : '';
       const categoryName = product.category ? categoryMap.get(product.category) : undefined;
+      const seoImage = getProductImageUrl(product.images, 'lg', product.image);
       
       // Обновляем мета-теги
       updateSEO({
@@ -164,7 +173,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         description: `${product.name} ${priceText}. Купить китайский чай в Калининграде с доставкой. ${product.description?.slice(0, 120) || 'Премиальный чай из Китая.'}`,
         canonical: `/product/${product.id}/`,
         type: 'product',
-        image: product.image,
+        image: seoImage,
       });
       
       // Добавляем структурированные данные для товара
@@ -172,7 +181,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         id: product.id,
         name: product.name,
         description: product.description,
-        image: product.image,
+        image: seoImage,
         price: String(minPrice),
         category: categoryName,
         availability: 'InStock',

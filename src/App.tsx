@@ -9,6 +9,7 @@ import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';
 import { createOrder, clearCart } from './api';
 import { CartItem } from './types/cart';
+import { getProductImageUrl } from './utils/format';
 import { ToastItem, ToastStack } from './components/Toast';
 import { AuthModal } from './components/AuthModal';
 import { updateSEO, SEO_PAGES, getCategorySEO, getCategoryH1 } from './utils/seo';
@@ -283,7 +284,7 @@ const App: React.FC = () => {
                   price: variant.price,
                   productName: product.name,
                   variantWeight: variant.weight,
-                  image: product.image,
+                  image: getProductImageUrl(product.images, 'thumb', product.image),
                 })
               }
             />
