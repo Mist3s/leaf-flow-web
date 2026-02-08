@@ -5969,10 +5969,99 @@ a {
   border-color: rgba(45, 138, 54, 0.25);
 }
 
+.tea-brewing__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.4rem;
+}
+
 .tea-brewing__name {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text);
+}
+
+.tea-brewing__note-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tea-brewing__note-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.tea-brewing__note-btn:hover,
+.tea-brewing__note-btn--active {
+  color: var(--primary);
+  background: rgba(45, 138, 54, 0.08);
+}
+
+[data-theme='dark'] .tea-brewing__note-btn:hover,
+[data-theme='dark'] .tea-brewing__note-btn--active {
+  background: rgba(45, 138, 54, 0.15);
+}
+
+.tea-brewing__tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -4px;
+  z-index: 50;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+  animation: brewTooltipIn 0.15s ease-out;
+}
+
+[data-theme='dark'] .tea-brewing__tooltip {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tea-brewing__tooltip-arrow {
+  position: absolute;
+  top: -5px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.tea-brewing__tooltip-text {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+@keyframes brewTooltipIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tea-brewing__stats {

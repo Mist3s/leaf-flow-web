@@ -30,7 +30,7 @@ const ZOOM_STEP = 0.5;
 const SWIPE_THRESHOLD = 40;
 
 // Вычисление расстояния между двумя точками касания
-const getTouchDistance = (touches: React.TouchList): number => {
+const getTouchDistance = (touches: TouchList): number => {
   if (touches.length < 2) return 0;
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -90,6 +90,8 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
   
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
   const lightboxImageRef = useRef<HTMLDivElement>(null);
+  const galleryMainRef = useRef<HTMLDivElement>(null);
+  const lightboxContentRef = useRef<HTMLDivElement>(null);
 
   const showThumbnails = galleryImages.length > 1;
 
@@ -170,7 +172,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
     setPan({ x: 0, y: 0 });
   }, []);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     if (!lightboxOpen) return;
     e.preventDefault();
     if (e.deltaY < 0) handleZoomIn();
@@ -193,35 +195,111 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
     setIsDragging(false);
   }, []);
 
-  // Touch для лайтбокса
-  const handleLightboxTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
+  // Touch для лайтбокса (нативные типы — привязываются через addEventListener с { passive: false })
+  const lbTouchStartX = useRef<number | null>(null);
+  const lbTouchStartY = useRef<number | null>(null);
+  const lbSwiped = useRef(false);
+
+  const handleLightboxTouchStart = useCallback((e: TouchEvent) => {
     if (e.touches.length === 2) {
+      // Pinch — блокируем дефолт
+      e.preventDefault();
       setInitialPinchDistance(getTouchDistance(e.touches));
       setInitialZoom(zoom);
-    } else if (e.touches.length === 1 && zoom > 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y });
+      lbTouchStartX.current = null;
+    } else if (e.touches.length === 1) {
+      if (zoom > 1) {
+        // Pan при увеличении — блокируем дефолт
+        e.preventDefault();
+        setIsDragging(true);
+        setDragStart({ x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y });
+      }
+      // Запоминаем начало касания для свайпа
+      lbTouchStartX.current = e.touches[0].clientX;
+      lbTouchStartY.current = e.touches[0].clientY;
+      lbSwiped.current = false;
     }
   }, [zoom, pan]);
 
-  const handleLightboxTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
+  const handleLightboxTouchMove = useCallback((e: TouchEvent) => {
     if (e.touches.length === 2 && initialPinchDistance !== null) {
+      e.preventDefault();
       const distance = getTouchDistance(e.touches);
       const scale = distance / initialPinchDistance;
       const newZoom = Math.min(Math.max(initialZoom * scale, MIN_ZOOM), MAX_ZOOM);
       setZoom(newZoom);
       if (newZoom === 1) setPan({ x: 0, y: 0 });
-    } else if (e.touches.length === 1 && isDragging && zoom > 1) {
-      setPan({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+    } else if (e.touches.length === 1) {
+      if (isDragging && zoom > 1) {
+        e.preventDefault();
+        setPan({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+      } else if (zoom <= 1 && lbTouchStartX.current !== null) {
+        // Свайп при обычном зуме
+        const diffX = e.touches[0].clientX - lbTouchStartX.current;
+        const diffY = e.touches[0].clientY - (lbTouchStartY.current || 0);
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+          e.preventDefault();
+          lbSwiped.current = true;
+        }
+      }
     }
   }, [initialPinchDistance, initialZoom, isDragging, zoom, dragStart]);
 
-  const handleLightboxTouchEnd = useCallback(() => {
+  const handleLightboxTouchEnd = useCallback((e: TouchEvent) => {
+    // Свайп для листания
+    if (lbTouchStartX.current !== null && lbSwiped.current && zoom <= 1) {
+      const endX = e.changedTouches[0]?.clientX ?? lbTouchStartX.current;
+      const diffX = endX - lbTouchStartX.current;
+      if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+        if (diffX < 0) {
+          setActiveIndex(prev => (prev + 1) % galleryImages.length);
+        } else {
+          setActiveIndex(prev => (prev - 1 + galleryImages.length) % galleryImages.length);
+        }
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      }
+    }
+    lbTouchStartX.current = null;
+    lbTouchStartY.current = null;
+    lbSwiped.current = false;
     setIsDragging(false);
     setInitialPinchDistance(null);
-  }, []);
+  }, [zoom, galleryImages.length]);
+
+  // Refs для актуальных обработчиков (чтобы не перерегистрировать listeners при каждом изменении)
+  const handleWheelRef = useRef(handleWheel);
+  handleWheelRef.current = handleWheel;
+  const handleLightboxTouchStartRef = useRef(handleLightboxTouchStart);
+  handleLightboxTouchStartRef.current = handleLightboxTouchStart;
+  const handleLightboxTouchMoveRef = useRef(handleLightboxTouchMove);
+  handleLightboxTouchMoveRef.current = handleLightboxTouchMove;
+  const handleLightboxTouchEndRef = useRef(handleLightboxTouchEnd);
+  handleLightboxTouchEndRef.current = handleLightboxTouchEnd;
+
+  // Привязка non-passive listeners для лайтбокса
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const el = lightboxContentRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => handleWheelRef.current(e);
+    const onTouchStart = (e: TouchEvent) => handleLightboxTouchStartRef.current(e);
+    const onTouchMove = (e: TouchEvent) => handleLightboxTouchMoveRef.current(e);
+    const onTouchEnd = (e: TouchEvent) => handleLightboxTouchEndRef.current(e);
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [lightboxOpen]);
 
   // Свайп для галереи
   const handleGalleryTouchStart = useCallback((e: React.TouchEvent) => {
@@ -232,7 +310,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
     stopAutoSlide();
   }, [showThumbnails, stopAutoSlide]);
 
-  const handleGalleryTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleGalleryTouchMove = useCallback((e: TouchEvent) => {
     if (touchStartX.current === null || e.touches.length !== 1) return;
     const diffX = e.touches[0].clientX - touchStartX.current;
     const diffY = e.touches[0].clientY - (touchStartY.current || 0);
@@ -243,6 +321,14 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
       e.preventDefault(); // Предотвращаем скролл страницы
     }
   }, []);
+
+  // Привязка non-passive touchmove для свайпа в галерее
+  useEffect(() => {
+    const el = galleryMainRef.current;
+    if (!el) return;
+    el.addEventListener('touchmove', handleGalleryTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', handleGalleryTouchMove);
+  }, [handleGalleryTouchMove]);
 
   const handleGalleryTouchEnd = useCallback((e: React.TouchEvent) => {
     if (touchStartX.current === null) {
@@ -316,10 +402,10 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
 
         {/* Основное изображение */}
         <div 
+          ref={galleryMainRef}
           className={`product-gallery__main ${!showThumbnails ? 'product-gallery__main--single' : ''}`}
           onClick={handleGalleryClick}
           onTouchStart={handleGalleryTouchStart}
-          onTouchMove={handleGalleryTouchMove}
           onTouchEnd={handleGalleryTouchEnd}
         >
           <img
@@ -399,12 +485,9 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
           </div>
 
           <div 
+            ref={lightboxContentRef}
             className="lightbox__content"
             onClick={e => e.stopPropagation()}
-            onWheel={handleWheel}
-            onTouchStart={handleLightboxTouchStart}
-            onTouchMove={handleLightboxTouchMove}
-            onTouchEnd={handleLightboxTouchEnd}
           >
             {showThumbnails && (
               <button className="lightbox__nav lightbox__nav--prev" onClick={handlePrevious} aria-label="Предыдущее">

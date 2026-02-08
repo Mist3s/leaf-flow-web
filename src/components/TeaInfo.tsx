@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { Flame, Timer, Scale } from 'lucide-react';
+import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { Flame, Timer, Scale, Info } from 'lucide-react';
 import { BrewProfile, ProductAttribute } from '../types/catalog';
 
 type Props = {
@@ -23,25 +23,91 @@ const LevelIndicator = memo<{ level: TasteLevel; label: string }>(({ level, labe
 
 LevelIndicator.displayName = 'LevelIndicator';
 
-const BrewingCard = memo<{ profile: BrewProfile; isFirst: boolean }>(({ profile, isFirst }) => (
-  <div className={`tea-brewing__card ${isFirst ? 'tea-brewing__card--primary' : ''}`}>
-    <span className="tea-brewing__name">{profile.method}</span>
-    <div className="tea-brewing__stats">
-      <div className="tea-brewing__stat">
-        <Scale size={14} />
-        <span>{profile.weight}</span>
+const BrewingCard = memo<{ profile: BrewProfile; isFirst: boolean }>(({ profile, isFirst }) => {
+  const [showNote, setShowNote] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Закрытие по клику вне тултипа или скроллу
+  useEffect(() => {
+    if (!showNote) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowNote(false);
+      }
+    };
+    const handleScroll = () => setShowNote(false);
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showNote]);
+
+  // Клик — toggle для мобильных
+  const handleToggleNote = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowNote(prev => !prev);
+  }, []);
+
+  // Hover — только для десктопа (показ с небольшой задержкой)
+  const handleMouseEnter = useCallback(() => {
+    hoverTimeout.current = setTimeout(() => setShowNote(true), 120);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimeout.current) {
+      clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
+    setShowNote(false);
+  }, []);
+
+  return (
+    <div className={`tea-brewing__card ${isFirst ? 'tea-brewing__card--primary' : ''}`}>
+      <div className="tea-brewing__header">
+        <span className="tea-brewing__name">{profile.method}</span>
+        {profile.note && (
+          <div
+            ref={wrapperRef}
+            className="tea-brewing__note-wrapper"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <button
+              className={`tea-brewing__note-btn ${showNote ? 'tea-brewing__note-btn--active' : ''}`}
+              onClick={handleToggleNote}
+              aria-label="Подсказка по завариванию"
+            >
+              <Info size={14} />
+            </button>
+            {showNote && (
+              <div className="tea-brewing__tooltip">
+                <div className="tea-brewing__tooltip-arrow" />
+                <p className="tea-brewing__tooltip-text">{profile.note}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <div className="tea-brewing__stat">
-        <Flame size={14} />
-        <span>{profile.temperature}</span>
-      </div>
-      <div className="tea-brewing__stat">
-        <Timer size={14} />
-        <span>{profile.brew_time}</span>
+      <div className="tea-brewing__stats">
+        <div className="tea-brewing__stat">
+          <Scale size={14} />
+          <span>{profile.weight}</span>
+        </div>
+        <div className="tea-brewing__stat">
+          <Flame size={14} />
+          <span>{profile.temperature}</span>
+        </div>
+        <div className="tea-brewing__stat">
+          <Timer size={14} />
+          <span>{profile.brew_time}</span>
+        </div>
       </div>
     </div>
-  </div>
-));
+  );
+});
 
 BrewingCard.displayName = 'BrewingCard';
 
@@ -52,36 +118,36 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   astringency: 'Терпкость',
 };
 
-// Атрибуты которые отображаются как scale (уровни 1-3)
-const SCALE_ATTRIBUTES = ['body', 'sweetness', 'astringency'];
+// Коды атрибутов которые отображаются как scale (уровни 1-3)
+const SCALE_CODES = ['body', 'sweetness', 'astringency'];
 
-// Коды атрибутов для вкусов
-const FLAVOR_CODES = ['flavor', 'flavors', 'taste_notes'];
+// Код атрибута вкуса
+const TASTE_CODE = 'taste';
 
-// Коды атрибутов для эффектов
-const EFFECT_CODES = ['effect', 'effects'];
+// Код атрибута эффекта
+const EFFECT_CODE = 'effect';
 
 export const TeaInfo: React.FC<Props> = memo(({ brewingProfiles, attributes }) => {
   // Фильтруем активные профили заваривания
   const activeProfiles = brewingProfiles.filter(p => p.is_active);
   
-  // Разделяем атрибуты по типу отображения
+  // Атрибуты-шкалы (body, sweetness, astringency)
   const scaleAttrs = attributes.filter(
-    attr => attr.is_active && (attr.ui_hint === 'scale' || SCALE_ATTRIBUTES.includes(attr.code))
+    attr => attr.is_active && SCALE_CODES.includes(attr.code)
   );
   
-  // Ищем атрибут вкуса (chips)
-  const flavorAttr = attributes.find(
-    attr => attr.is_active && (attr.ui_hint === 'chips' || FLAVOR_CODES.includes(attr.code))
+  // Атрибут вкуса (taste)
+  const tasteAttr = attributes.find(
+    attr => attr.is_active && attr.code === TASTE_CODE
   );
   
-  // Ищем атрибут эффекта (chips)
+  // Атрибут эффекта (effect)
   const effectAttr = attributes.find(
-    attr => attr.is_active && EFFECT_CODES.includes(attr.code)
+    attr => attr.is_active && attr.code === EFFECT_CODE
   );
 
-  // Получаем значения для chips-атрибутов (все значения, не только is_active)
-  const flavors = flavorAttr?.values.slice(0, 3) || [];
+  // Получаем значения для chips-атрибутов
+  const flavors = tasteAttr?.values.slice(0, 3) || [];
   const effects = effectAttr?.values.slice(0, 2) || [];
 
   // Маппинг slug → уровень для разных атрибутов
