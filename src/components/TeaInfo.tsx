@@ -15,7 +15,7 @@ const LevelIndicator = memo<{ level: TasteLevel; label: string }>(({ level, labe
     <div className="tea-taste__item">
       <span className="tea-taste__label">{label}</span>
       <div className="tea-taste__bar">
-        <div className="tea-taste__fill" style={{ width: `${percentage}%` }} />
+        <div className="tea-taste__fill" style={{ '--fill': `${percentage}%` } as React.CSSProperties} />
       </div>
     </div>
   );

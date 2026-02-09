@@ -60,7 +60,7 @@ const ProductCard = memo<{
       className="product-card"
       role="button"
       tabIndex={0}
-      style={{ animationDelay: `${Math.min(index, 20) * 0.03}s` }}
+      style={{ '--delay': `${Math.min(index, 20) * 0.03}s` } as React.CSSProperties}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >

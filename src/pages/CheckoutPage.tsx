@@ -304,7 +304,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
             )}
 
           {form.delivery !== 'pickup' && (
-              <div className="checkout-field" style={{ marginTop: '1rem' }}>
+              <div className="checkout-field checkout-field--spaced">
                 <label className="checkout-label" htmlFor="checkout-address">
                   Адрес доставки <span className="checkout-required">*</span>
             </label>

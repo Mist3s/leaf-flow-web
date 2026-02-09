@@ -89,7 +89,7 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
             <article
               key={`${item.productId}:${item.variantId}`}
               className="cart-item"
-              style={{ animationDelay: `${index * 0.05}s` }}
+              style={{ '--delay': `${index * 0.05}s` } as React.CSSProperties}
               onClick={() => onNavigate(`/product/${item.productId}/`)}
               role="button"
               tabIndex={0}

@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shop Badges (compact info with popups)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Shop Badges (compact info with popups) */
+.shop-badges {
+  position: relative;
+}
+
+.shop-badges__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm-2);
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+  }
+}
+
+.shop-badge--active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.shop-badge svg {
+  opacity: 0.8;
+}
+
+.shop-badges__popup {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: var(--z-dropdown);
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px color-mix(in srgb, black 12%, transparent);
+  animation: popupFadeIn 0.2s ease;
+}
+.shop-badges__popup-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-muted);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+
+  &:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+}
+
+.shop-badges__popup-title {
+  margin: 0 0 1rem 0;
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.shop-badges__popup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shop-badges__popup-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: var(--text-sm);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.shop-badges__popup-list li svg {
+  flex-shrink: 0;
+  color: var(--primary);
+  margin-top: 2px;
+}
+
+.shop-badges__popup-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.shop-badges__popup-list li strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.shop-badges__popup-list li span {
+  color: var(--text-muted);
+  font-size: var(--text-sm-2);
+}
+
+.shop-badges__popup-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shop-badges__popup-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: color var(--transition-normal);
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.shop-badges__popup-contact svg {
+  color: var(--primary);
+}
+
+.shop-badges__popup-subtitle {
+  margin: -0.5rem 0 1rem 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Mobile overlay */
+.shop-badges__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: color-mix(in srgb, black 50%, transparent);
+  backdrop-filter: blur(4px);
+  animation: overlayFadeIn 0.2s ease;
+}
+/* Mobile popup */
+.shop-badges__popup--mobile {
+  position: fixed;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-modal);
+  max-height: 85vh;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  padding: 1.5rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  animation: mobilePopupSlideUp 0.3s ease;
+}
+.shop-badges__popup--mobile .shop-badges__popup-close {
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+}
+
+.shop-badges__popup--mobile .shop-badges__popup-title {
+  font-size: var(--text-lg-2);
+  margin-bottom: 1.25rem;
+}
+
+.shop-badges__popup--mobile .shop-badges__popup-list {
+  gap: 1rem;
+}
+
+.shop-badges__popup--mobile .shop-badges__popup-list li {
+  font-size: var(--text-md-2);
+  padding: 0.75rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.shop-badges__popup--mobile .shop-badges__popup-contacts {
+  gap: 0.75rem;
+}
+
+.shop-badges__popup--mobile .shop-badges__popup-contact {
+  padding: 1rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+}
