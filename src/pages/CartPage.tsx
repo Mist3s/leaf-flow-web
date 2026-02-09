@@ -1,6 +1,6 @@
 import React from 'react';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Package, LogIn, Loader2 } from 'lucide-react';
-import { formatCurrency, getImageUrl } from '../utils/format';
+import { formatCurrency, getImageUrl, getProductImageUrl } from '../utils/format';
 import { CartItem } from '../types/cart';
 
 type Props = {
@@ -89,14 +89,14 @@ export const CartPage: React.FC<Props> = ({ cart, onNavigate, onChangeQty, onRem
             <article
               key={`${item.productId}:${item.variantId}`}
               className="cart-item"
-              style={{ animationDelay: `${index * 0.05}s` }}
+              style={{ '--delay': `${index * 0.05}s` } as React.CSSProperties}
               onClick={() => onNavigate(`/product/${item.productId}/`)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && onNavigate(`/product/${item.productId}/`)}
             >
               <div className="cart-item__media">
-              <img src={getImageUrl(item.image) || placeholder} alt={item.productName} loading="lazy" />
+              <img src={getImageUrl(getProductImageUrl(item.images, 'thumb', item.image)) || placeholder} alt={item.productName} loading="lazy" />
               </div>
 
               <div className="cart-item__body">

@@ -2,6 +2,7 @@
 
 # Сборка образа для prod
 docker build -t  mist3s/leaf-flow-web-nginx:prod .
+docker build --no-cache --pull -t mist3s/leaf-flow-web-nginx:prod .
 
 # Пуш образа в Docker Hub
 docker push mist3s/leaf-flow-web-nginx:prod
@@ -12,11 +13,9 @@ docker push mist3s/leaf-flow-web-nginx:prod
 
 # Сборка образа для prod
 docker build -t  mist3s/leaf-flow-web-nginx:stage .
+docker build --no-cache --pull -t mist3s/leaf-flow-web-nginx:stage .
 
 # Пуш образа в Docker Hub
 docker push mist3s/leaf-flow-web-nginx:stage
 
 ----------------------------------------------
-
-docker build --no-cache --pull -t mist3s/leaf-flow-web-nginx:stage .
-docker push mist3s/leaf-flow-web-nginx:stage

@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // API app-stage.zavarka39.ru or app.zavarka39.ru
 // ═══════════════════════════════════════════════════════════════════════════
-
+// export const API_BASE_URL = 'https://app-stage.zavarka39.ru/api';
 export const API_BASE_URL = 'https://app.zavarka39.ru/api';
 export const IMAGE_BASE_URL = 'https://app.zavarka39.ru';
 
@@ -21,6 +21,7 @@ export const SITE_URL = 'https://zavarka39.ru';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Username бота для Telegram Login Widget (без @) */
+// export const TELEGRAM_BOT_NAME = 'z39stage_bot';
 export const TELEGRAM_BOT_NAME = 'zavarka39_bot';
 
 /** Ссылка на Telegram Mini App */

@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Auth Modal & Telegram Login
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.auth {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.auth__header {
+  justify-content: flex-start;
+}
+
+.auth__card {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.auth__form {
+  max-width: 460px;
+}
+
+.auth__switcher .pill {
+  flex: 1;
+}
+
+.pill.ghost {
+  background: var(--surface-muted);
+  border-style: dashed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTH MODAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dropdown);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--text) 60%, transparent);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-backdrop--closing {
+  animation: fadeOut 0.2s ease-in forwards;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: 2rem;
+  box-shadow:
+    0 25px 50px -12px color-mix(in srgb, black 25%, transparent),
+    0 0 0 1px color-mix(in srgb, white 5%, transparent) inset;
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+.modal--closing {
+  animation: modalSlideOut 0.2s ease-in forwards;
+}
+
+.modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--surface);
+    color: var(--text);
+    transform: rotate(90deg);
+  }
+}
+
+.modal__header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, transparent), color-mix(in srgb, var(--success) 15%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+}
+
+.modal__title {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.modal__subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-md-2);
+}
+
+.modal__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+
+.modal__tab {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+
+  &:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+  }
+}
+
+.modal__tab--active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.modal__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal__optional {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-inline-start: 0.25rem;
+}
+
+.modal__input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: var(--text-base);
+  transition: all var(--transition-normal);
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+}
+
+.modal__error {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  color: var(--error);
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.modal__submit {
+  margin-top: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 80%, var(--accent)) 100%);
+  color: var(--primary-contrast);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 52px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.modal__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.modal__footer-text {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-md);
+}
+
+.modal__link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+/* Telegram Login в модалке */
+.modal__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm-2);
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+}
+
+.modal__telegram {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+  margin-bottom: 0.25rem;
+}
+
+.modal__telegram-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--text-md);
+}
+
+/* Стили для Telegram Login Widget */
+.tg-login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+}
+
+.tg-login-container {
+  display: flex;
+  justify-content: center;
+  transition: opacity var(--transition-normal);
+}
+
+.tg-login-container--loading {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.tg-login-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tg-login-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--telegram);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.tg-login-error {
+  color: var(--error);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: 0.5rem;
+}
+@media (max-width: 720px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-width: 100%;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding: 1.5rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .modal--closing {
+    animation: modalSlideDown 0.2s ease-in forwards;
+  }
+}

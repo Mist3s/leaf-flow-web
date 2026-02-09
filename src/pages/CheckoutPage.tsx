@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, User, Phone, MapPin, MessageSquare, Store, Truck, Package, ShoppingBag, LogIn, CreditCard, CheckCircle2, AlertCircle, Headphones, Loader2 } from 'lucide-react';
-import { formatCurrency, getImageUrl } from '../utils/format';
+import { formatCurrency, getImageUrl, getProductImageUrl } from '../utils/format';
 import { CartItem } from '../types/cart';
 import { UserProfile } from '../types/auth';
 
@@ -304,7 +304,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
             )}
 
           {form.delivery !== 'pickup' && (
-              <div className="checkout-field" style={{ marginTop: '1rem' }}>
+              <div className="checkout-field checkout-field--spaced">
                 <label className="checkout-label" htmlFor="checkout-address">
                   Адрес доставки <span className="checkout-required">*</span>
             </label>
@@ -416,7 +416,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
               {cart.items.map((item) => (
                 <div key={`${item.productId}:${item.variantId}`} className="checkout-summary__item">
                   <img
-                    src={getImageUrl(item.image) || placeholder}
+                    src={getImageUrl(getProductImageUrl(item.images, 'thumb', item.image)) || placeholder}
                     alt={item.productName}
                     className="checkout-summary__item-img"
                   />

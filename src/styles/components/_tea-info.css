@@ -1,0 +1,307 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tea Info Block (brewing, taste, effects)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tea-info {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  margin-top: 0.5rem;
+  box-shadow: 0 4px 24px color-mix(in srgb, black 4%, transparent);
+}
+
+.tea-info__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.tea-info__title {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Brewing section */
+.tea-brewing__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tea-brewing__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.6rem 0.85rem;
+  background: var(--surface-muted);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-normal);
+}
+
+.tea-brewing__card--primary {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent) 0%, color-mix(in srgb, var(--primary) 2%, transparent) 100%);
+  border-color: color-mix(in srgb, var(--primary) 15%, transparent);
+
+  [data-theme='dark'] & {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, transparent) 0%, color-mix(in srgb, var(--primary) 5%, transparent) 100%);
+    border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+}
+
+.tea-brewing__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.4rem;
+}
+
+.tea-brewing__name {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tea-brewing__note-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tea-brewing__note-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color var(--transition-normal), background 0.2s ease;
+}
+
+.tea-brewing__note-btn:hover,
+.tea-brewing__note-btn--active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+
+  [data-theme='dark'] & {
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+  }
+}
+
+.tea-brewing__tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -4px;
+  z-index: var(--z-fixed);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 2rem));
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px color-mix(in srgb, black 12%, transparent), 0 1px 4px color-mix(in srgb, black 6%, transparent);
+  animation: brewTooltipIn 0.15s ease-out;
+
+  [data-theme='dark'] & {
+    box-shadow: 0 4px 16px color-mix(in srgb, black 35%, transparent), 0 1px 4px color-mix(in srgb, black 20%, transparent);
+  }
+}
+
+.tea-brewing__tooltip-arrow {
+  position: absolute;
+  top: -5px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.tea-brewing__tooltip-text {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.tea-brewing__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.tea-brewing__stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tea-brewing__stat svg {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+/* Taste section */
+.tea-taste__flavors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tea-taste__flavor {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--text-sm-2);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+  }
+}
+
+.tea-taste__levels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tea-taste__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tea-taste__label {
+  font-size: var(--text-sm-2);
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.tea-taste__bar {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.tea-taste__fill {
+  height: 100%;
+  width: var(--fill, 0%);
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effects section */
+.tea-effects__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tea-effects__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, transparent) 0%, color-mix(in srgb, var(--primary) 5%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
+  font-size: var(--text-sm-2);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-normal);
+
+  [data-theme='dark'] & {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, transparent) 0%, color-mix(in srgb, var(--primary) 10%, transparent) 100%);
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary) 15%, transparent);
+    border-color: var(--primary);
+  }
+}
+
+.tea-info__note {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+@media (max-width: 900px) {
+  .tea-info {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .tea-info__block:first-child {
+    grid-column: 1 / -1;
+  }
+  
+  .tea-brewing__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .tea-brewing__card {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tea-info {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .tea-brewing__grid {
+    flex-direction: column;
+  }
+  
+  .tea-brewing__card {
+    min-width: unset;
+    padding: 0.6rem 0.75rem;
+  }
+  
+  .tea-brewing__stats {
+    gap: 0.4rem;
+  }
+  
+  .tea-brewing__stat {
+    font-size: var(--text-2xs);
+  }
+}

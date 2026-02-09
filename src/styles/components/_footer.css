@@ -1,0 +1,116 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Footer Component
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+}
+
+.footer__main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.25rem 0;
+}
+
+.footer__links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition: color var(--transition-normal);
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.footer__links svg {
+  color: var(--primary);
+  opacity: 0.7;
+}
+
+.footer__contacts {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer__contacts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition: color var(--transition-normal);
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.footer__contacts svg {
+  color: var(--primary);
+}
+
+.footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm-2);
+  color: var(--text-muted);
+}
+
+.footer__copyright {
+  opacity: 0.8;
+}
+
+.footer__legal {
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  /* Footer padding when fixed bottom bar is present */
+  .page:has(.pdp-mobile-bar) ~ .footer,
+  .page:has(.cart-mobile-bar) ~ .footer,
+  .page:has(.checkout-mobile-submit) ~ .footer {
+    padding-bottom: 4rem;
+  }
+
+  .footer__main {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0;
+  }
+
+  .footer__links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .footer__contacts {
+    gap: 1rem;
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: center;
+  }
+}

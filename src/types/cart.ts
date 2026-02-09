@@ -1,3 +1,5 @@
+import type { ProductImage } from './catalog';
+
 export type CartItem = {
   productId: string;
   variantId: string;
@@ -7,6 +9,7 @@ export type CartItem = {
   productName: string;
   variantWeight: string;
   image?: string;
+  images?: ProductImage[];
 };
 
 export type CartResponse = {

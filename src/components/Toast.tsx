@@ -92,7 +92,7 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
 
       {duration > 0 && (
         <div className="toast__progress">
-          <div className="toast__progress-bar" style={{ width: `${progress}%` }} />
+          <div className="toast__progress-bar" style={{ '--progress': `${progress}%` } as React.CSSProperties} />
         </div>
       )}
     </div>

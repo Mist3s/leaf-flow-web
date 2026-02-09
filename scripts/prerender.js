@@ -15,6 +15,7 @@ const SITE_URL = `http://localhost:${PORT}`;
 const API_URL = 'https://app.zavarka39.ru/api/v1/catalog/products';
 
 // Статические страницы для pre-rendering (пути со слешем)
+// Примечание: 404.html — статичный файл в public/, копируется автоматически
 const STATIC_PAGES = [
   { path: '/', output: 'index.html' },
   { path: '/delivery/', output: 'delivery/index.html' },

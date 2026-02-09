@@ -1,0 +1,103 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Design Tokens
+   All CSS custom properties (colors, spacing, radii, transitions, shadows)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Breakpoints reference (CSS cannot use vars in @media):
+ *   --bp-sm:  640px   (small mobile)
+ *   --bp-md:  768px   (tablet / main mobile breakpoint)
+ *   --bp-lg:  960px   (desktop)
+ */
+
+:root {
+  color-scheme: light dark;
+  accent-color: var(--primary);
+
+  /* ── Colors ── */
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f2f4f8;
+  --text: #0f172a;
+  --text-muted: #5b6475;
+  --primary: #2d8a36;
+  --primary-contrast: #ffffff;
+  --accent: #c9a227;
+  --border: #e0e7f1;
+  --error: #ef4444;
+  --error-dark: #dc2626;
+  --error-darker: #b91c1c;
+  --success: #22c55e;
+  --warning: #eab308;
+  --telegram: #0088cc;
+
+  /* ── Shadows ── */
+  --shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow: 0 12px 38px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+  /* ── Border Radius ── */
+  --radius-2xs: 4px;
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* ── Transitions ── */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+
+  /* ── Z-Index Scale ── */
+  --z-sticky: 20;
+  --z-fixed: 50;
+  --z-dropdown: 100;
+  --z-above: 900;
+  --z-overlay: 999;
+  --z-modal: 1000;
+  --z-lightbox: 9999;
+
+  /* ── Type Scale ── */
+  --text-2xs: 0.7rem;
+  --text-xs: 0.75rem;
+  --text-sm-2: 0.8rem;
+  --text-sm: 0.85rem;
+  --text-md: 0.9rem;
+  --text-md-2: 0.95rem;
+  --text-base: 1rem;
+  --text-lg-2: 1.1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  /* ── Layout ── */
+  --container-max: 1180px;
+  --container-padding: 1.5rem;
+}
+
+[data-theme='dark'] {
+  --bg: #0f1115;
+  --surface: #1a1d24;
+  --surface-muted: #22262e;
+  --text: #e4e7eb;
+  --text-muted: #9ca3af;
+  --primary: #2d8a36;
+  --primary-contrast: #ffffff;
+  --accent: #c9a227;
+  --border: #2d333b;
+  --error: #ef4444;
+  --error-dark: #dc2626;
+  --error-darker: #b91c1c;
+  --success: #22c55e;
+  --warning: #eab308;
+  --telegram: #0088cc;
+
+  --shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow: 0 12px 38px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
+}

@@ -1,0 +1,39 @@
+/* Scroll to Top Button */
+
+/* ========================================
+   SCROLL TO TOP
+   ======================================== */
+
+.scroll-to-top {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px color-mix(in srgb, black 15%, transparent);
+  z-index: var(--z-above);
+  transition: transform var(--transition-normal), opacity 0.2s ease, box-shadow 0.2s ease;
+  animation: scrollTopFadeIn 0.3s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px color-mix(in srgb, black 20%, transparent);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+}
+@media (max-width: 720px) {
+  .scroll-to-top {
+    bottom: 5rem;
+  }
+}
