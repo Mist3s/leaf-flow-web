@@ -14,6 +14,7 @@ import { ToastItem, ToastStack } from './components/Toast';
 import { AuthModal } from './components/AuthModal';
 import { updateSEO, SEO_PAGES, getCategorySEO, getCategoryH1 } from './utils/seo';
 import { getIdBySlug } from './utils/categories';
+import { useChatContext } from './store/ChatContext';
 
 // Lazy loaded pages для code splitting
 const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
@@ -27,6 +28,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ defaul
 const OfferPage = lazy(() => import('./pages/OfferPage').then(m => ({ default: m.OfferPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+const ChatLayoutPage = lazy(() => import('./pages/lk/chat/ChatLayoutPage').then(m => ({ default: m.ChatLayoutPage })));
 
 const App: React.FC = () => {
   const [theme, toggleTheme] = useTheme();
@@ -40,6 +42,7 @@ const App: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [productNotFound, setProductNotFound] = useState(false);
+  const chatContext = useChatContext();
   const prevRouteRef = useRef(route.name);
   const homeScrollRef = useRef(0);
   const forceScrollTopRef = useRef(false);
@@ -78,13 +81,13 @@ const App: React.FC = () => {
   // Динамическое SEO (title, description, canonical, OG)
   useEffect(() => {
     const routeName = route.name as keyof typeof SEO_PAGES;
-    
+
     // Если продукт не найден — показываем SEO для 404
     if (route.name === 'product' && productNotFound) {
       updateSEO(SEO_PAGES.notfound);
       return;
     }
-    
+
     if (routeName === 'checkout' && orderSummary) {
       updateSEO({
         title: 'Заказ оформлен — Zavarka39',
@@ -114,7 +117,7 @@ const App: React.FC = () => {
   // Скролл при переходе между страницами
   useEffect(() => {
     const prevRoute = prevRouteRef.current;
-    
+
     if (route.name !== prevRoute) {
       if (route.name === 'home') {
         if (forceScrollTopRef.current) {
@@ -129,7 +132,7 @@ const App: React.FC = () => {
         window.scrollTo(0, 0);
       }
     }
-    
+
     prevRouteRef.current = route.name;
   }, [route.name, route.params && 'id' in route.params ? route.params.id : null]);
 
@@ -141,6 +144,22 @@ const App: React.FC = () => {
       setTimeout(() => setToasts((prev) => prev.filter((item) => item.id !== id)), duration);
     }
   }, []);
+
+  // Интеграция с ChatContext для глобальных уведомлений
+  useEffect(() => {
+    chatContext.setOnNewMessage((msg) => {
+      const text = msg.body || 'Вложение';
+      const truncated = text.length > 60 ? text.slice(0, 60) + '...' : text;
+      pushToast({
+        tone: 'info',
+        duration: 8000,
+        message: `Новое сообщение: ${truncated}`,
+        actions: [
+          { label: 'В чат', onClick: () => navigate(msg.conversation_id ? `/lk/chat/${msg.conversation_id}` : '/lk/chat') }
+        ]
+      });
+    });
+  }, [chatContext.setOnNewMessage, pushToast, navigate]);
 
   const openAuth = useCallback((mode: 'login' | 'register' = 'login') => {
     setAuthMode(mode);
@@ -218,13 +237,14 @@ const App: React.FC = () => {
   const headerProps = useMemo(() => ({
     theme,
     cartCount: cart.totalCount,
+    chatUnreadCount: chatContext.unreadCount, // Передаем непрочитанные сообщения в Header
     user: auth.user,
     authLoading: auth.loading,
     onToggleTheme: toggleTheme,
     onNavigate: handleNavigate,
     onOpenAuth: () => openAuth('login'),
     onLogout: handleLogout,
-  }), [theme, cart.totalCount, auth.user, auth.loading, toggleTheme, handleNavigate, openAuth, handleLogout]);
+  }), [theme, cart.totalCount, chatContext.unreadCount, auth.user, auth.loading, toggleTheme, handleNavigate, openAuth, handleLogout]);
 
   // Рендер контента страницы
   const renderPageContent = () => {
@@ -245,7 +265,7 @@ const App: React.FC = () => {
         const slug = 'slug' in route.params ? route.params.slug : '';
         const categoryId = getIdBySlug(slug) || slug; // Fallback на slug как id
         const h1 = getCategoryH1(slug);
-        
+
         return (
           <Suspense fallback={<PageLoader message="Загрузка каталога..." />}>
             <Home
@@ -294,14 +314,14 @@ const App: React.FC = () => {
       case 'cart':
         return (
           <Suspense fallback={<PageLoader message="Загрузка корзины..." />}>
-            <CartPage 
-              cart={cart} 
-              onNavigate={navigate} 
-              onChangeQty={changeQuantity} 
-              onRemove={removeItem} 
-              user={auth.user} 
-              authLoading={auth.loading} 
-              onOpenAuth={() => openAuth('login')} 
+            <CartPage
+              cart={cart}
+              onNavigate={navigate}
+              onChangeQty={changeQuantity}
+              onRemove={removeItem}
+              user={auth.user}
+              authLoading={auth.loading}
+              onOpenAuth={() => openAuth('login')}
             />
           </Suspense>
         );
@@ -313,13 +333,13 @@ const App: React.FC = () => {
           </Suspense>
         ) : (
           <Suspense fallback={<PageLoader message="Загрузка оформления..." />}>
-            <CheckoutPage 
-              cart={cart} 
-              onNavigate={navigate} 
-              onSubmit={submitOrder} 
-              user={auth.user} 
-              authLoading={auth.loading} 
-              onOpenAuth={() => openAuth('login')} 
+            <CheckoutPage
+              cart={cart}
+              onNavigate={navigate}
+              onSubmit={submitOrder}
+              user={auth.user}
+              authLoading={auth.loading}
+              onOpenAuth={() => openAuth('login')}
             />
           </Suspense>
         );
@@ -327,11 +347,11 @@ const App: React.FC = () => {
       case 'profile':
         return (
           <Suspense fallback={<PageLoader message="Загрузка профиля..." />}>
-            <ProfilePage 
+            <ProfilePage
               user={auth.user}
               authLoading={auth.loading}
               onNavigate={navigate}
-              onOpenAuth={() => openAuth('login')} 
+              onOpenAuth={() => openAuth('login')}
               onLogout={handleLogout}
               onShowToast={pushToast}
               onTelegramLink={doTelegramLink}
@@ -369,6 +389,14 @@ const App: React.FC = () => {
         return (
           <Suspense fallback={<PageLoader />}>
             <AboutPage onNavigate={navigate} />
+          </Suspense>
+        );
+
+      case 'chat_list':
+      case 'chat_room':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <ChatLayoutPage conversationId={'id' in route.params ? route.params.id : undefined} onNavigate={navigate} />
           </Suspense>
         );
 
@@ -414,7 +442,9 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <Footer onNavigate={navigate} />
+      {route.name !== 'chat_list' && route.name !== 'chat_room' && (
+        <Footer onNavigate={navigate} />
+      )}
     </>
   );
 };

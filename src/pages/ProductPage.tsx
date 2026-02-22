@@ -49,7 +49,7 @@ VariantButton.displayName = 'VariantButton';
 
 export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onChangeQty, cart, onShowToast, onNotFound }) => {
   const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [activeVariant, setActiveVariant] = useState<ProductDetail['variants'][number] | null>(null);
+  const [activeVariant, setActiveVariant] = useState<Product['variants'][number] | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         (res.items || []).forEach((cat) => map.set(cat.id, cat.label));
         setCategoryMap(map);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Загрузка отзывов
@@ -117,15 +117,15 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   useEffect(() => {
     setLoading(true);
     setError(null);
-    
+
     // НЕ перезаписываем SEO если страница уже prerendered с правильным title
     // Проверяем: если title содержит "купить в Калининграде" и НЕ является дефолтным —
     // значит это prerendered страница с уникальным названием товара
     const currentTitle = document.title;
-    const isPrerendered = currentTitle.includes('купить в Калининграде') && 
-                          !currentTitle.startsWith('Китайский чай —') &&
-                          !currentTitle.startsWith('Zavarka39');
-    
+    const isPrerendered = currentTitle.includes('купить в Калининграде') &&
+      !currentTitle.startsWith('Китайский чай —') &&
+      !currentTitle.startsWith('Zavarka39');
+
     if (!isPrerendered) {
       // Только для SPA-навигации устанавливаем временный title с ID продукта
       updateSEO({
@@ -135,7 +135,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         type: 'product',
       });
     }
-    
+
     getProduct(id)
       .then((res) => {
         setProduct(res);
@@ -150,7 +150,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
           onNotFound();
         }
       });
-    
+
     // Очищаем динамические схемы при уходе со страницы
     return () => {
       clearDynamicSchemas();
@@ -160,13 +160,13 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
   // Динамическое SEO для страницы товара
   useEffect(() => {
     if (product) {
-      const minPrice = product.variants.length > 0 
+      const minPrice = product.variants.length > 0
         ? Math.min(...product.variants.map(v => parseFloat(v.price)))
         : 0;
       const priceText = minPrice > 0 ? `от ${formatCurrency(minPrice)}` : '';
       const categoryName = product.category ? categoryMap.get(product.category) : undefined;
       const seoImage = getProductImageUrl(product.images, 'lg', product.image);
-      
+
       // Обновляем мета-теги
       updateSEO({
         title: `${product.name} — купить в Калининграде | Zavarka39`,
@@ -175,7 +175,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         type: 'product',
         image: seoImage,
       });
-      
+
       // Добавляем структурированные данные для товара
       updateProductSchema({
         id: product.id,
@@ -186,7 +186,7 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         category: categoryName,
         availability: 'InStock',
       });
-      
+
       // Обновляем хлебные крошки
       const breadcrumbs = [
         { name: 'Главная', url: '/' },
@@ -462,14 +462,14 @@ export const ProductPage: React.FC<Props> = memo(({ id, onNavigate, onAdd, onCha
         </div>
 
         {/* Tea Info Block - только для чая с атрибутами и профилями заваривания */}
-        {product.product_type_code === 'tea' && 
-         product.attributes.length > 0 && 
-         product.brewing_profiles.length > 0 && (
-          <TeaInfo 
-            brewingProfiles={product.brewing_profiles} 
-            attributes={product.attributes} 
-          />
-        )}
+        {product.product_type_code === 'tea' &&
+          product.attributes.length > 0 &&
+          product.brewing_profiles.length > 0 && (
+            <TeaInfo
+              brewingProfiles={product.brewing_profiles}
+              attributes={product.attributes}
+            />
+          )}
 
         {/* Description - full width section */}
         {product.description && (

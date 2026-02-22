@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, Send, Link2, Unlink, AlertTriangle, Edit3, Lock, Eye, EyeOff, Check } from 'lucide-react';
+import { User, Package, ChevronLeft, ChevronRight, MapPin, Clock, X, Loader2, ShoppingBag, LogOut, Mail, Send, Link2, Unlink, AlertTriangle, Edit3, Lock, Eye, EyeOff, Check, MessageSquare } from 'lucide-react';
 import { UserProfile, TelegramLoginWidgetPayload } from '../types/auth';
 import { listOrders, getOrder, OrderListItem, OrderDetails, UpdateProfilePayload, ChangePasswordPayload, SetEmailPayload } from '../api';
 import { formatCurrency } from '../utils/format';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
 import { TELEGRAM_BOT_NAME } from '../config';
+import { useChatContext } from '../store/ChatContext';
 
 type ToastPayload = {
   tone: 'success' | 'warning' | 'error' | 'info';
@@ -54,11 +55,11 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-export const ProfilePage: React.FC<Props> = ({ 
-  user, 
-  authLoading = false, 
-  onNavigate, 
-  onOpenAuth, 
+export const ProfilePage: React.FC<Props> = ({
+  user,
+  authLoading = false,
+  onNavigate,
+  onOpenAuth,
   onLogout,
   onShowToast,
   onTelegramLink,
@@ -74,6 +75,7 @@ export const ProfilePage: React.FC<Props> = ({
   const [hasMore, setHasMore] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const { conversations } = useChatContext();
 
   // Telegram link states
   const [tgLoading, setTgLoading] = useState(false);
@@ -103,7 +105,7 @@ export const ProfilePage: React.FC<Props> = ({
 
   const handleTelegramAuth = useCallback(async (payload: TelegramLoginWidgetPayload) => {
     if (!onTelegramLink) return;
-    
+
     // Сразу закрываем popup после получения данных от виджета
     setShowTgWidget(false);
     setTgLoading(true);
@@ -199,18 +201,18 @@ export const ProfilePage: React.FC<Props> = ({
   // Сохранить изменения профиля
   const handleSaveProfile = useCallback(async () => {
     if (!onUpdateProfile || !user) return;
-    
+
     // Собираем только изменённые поля
     const payload: UpdateProfilePayload = {};
     if (profileForm.firstName !== user.firstName) payload.firstName = profileForm.firstName;
     if (profileForm.lastName !== (user.lastName || '')) payload.lastName = profileForm.lastName || null;
     if (profileForm.email !== (user.email || '')) payload.email = profileForm.email;
-    
+
     if (Object.keys(payload).length === 0) {
       setEditingProfile(false);
       return;
     }
-    
+
     setProfileLoading(true);
     try {
       const result = await onUpdateProfile(payload);
@@ -232,29 +234,29 @@ export const ProfilePage: React.FC<Props> = ({
   // Изменение пароля (для пользователей с email)
   const handleChangePassword = useCallback(async () => {
     if (!onChangePassword) return;
-    
+
     if (!passwordForm.currentPassword) {
       onShowToast?.({ tone: 'error', message: 'Введите текущий пароль' });
       return;
     }
-    
+
     if (passwordForm.newPassword.length < 8) {
       onShowToast?.({ tone: 'error', message: 'Пароль должен содержать минимум 8 символов' });
       return;
     }
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       onShowToast?.({ tone: 'error', message: 'Пароли не совпадают' });
       return;
     }
-    
+
     setPasswordLoading(true);
     try {
       const payload: ChangePasswordPayload = {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       };
-      
+
       const result = await onChangePassword(payload);
       if (result.error) {
         onShowToast?.({ tone: 'error', message: result.error });
@@ -275,22 +277,22 @@ export const ProfilePage: React.FC<Props> = ({
   // Установка email для Telegram-пользователей
   const handleSetEmail = useCallback(async () => {
     if (!onSetEmail) return;
-    
+
     if (!setEmailForm.email) {
       onShowToast?.({ tone: 'error', message: 'Введите email' });
       return;
     }
-    
+
     if (setEmailForm.password.length < 8) {
       onShowToast?.({ tone: 'error', message: 'Пароль должен содержать минимум 8 символов' });
       return;
     }
-    
+
     if (setEmailForm.password !== setEmailForm.confirmPassword) {
       onShowToast?.({ tone: 'error', message: 'Пароли не совпадают' });
       return;
     }
-    
+
     setSetEmailLoading(true);
     try {
       const result = await onSetEmail({
@@ -919,6 +921,30 @@ export const ProfilePage: React.FC<Props> = ({
                   <div className="order-modal__total">
                     <span>Итого к оплате</span>
                     <span className="order-modal__total-value">{formatCurrency(selectedOrder.total)}</span>
+                  </div>
+                  <div className="order-modal__actions" style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                    {conversations.find(c => c.topic_type === 'order' && String(c.topic_id) === String(selectedOrder.orderId)) ? (
+                      <button
+                        className="button button--secondary"
+                        onClick={() => {
+                          const chat = conversations.find(c => c.topic_type === 'order' && String(c.topic_id) === String(selectedOrder.orderId));
+                          if (chat) {
+                            onNavigate(`/lk/chat/${chat.id}`);
+                          }
+                        }}
+                        style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <MessageSquare size={16} /> Чат по заказу
+                      </button>
+                    ) : (
+                      <button
+                        className="button button--secondary"
+                        onClick={() => onNavigate('/lk/chat')}
+                        style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <MessageSquare size={16} /> Написать в поддержку
+                      </button>
+                    )}
                   </div>
                 </footer>
               </>

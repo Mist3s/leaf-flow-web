@@ -15,8 +15,8 @@ type Props = {
 
 const DELIVERY_METHODS = [
   { id: 'pickup', label: 'Самовывоз', description: 'Бесплатно', icon: Store, price: 0 },
-  { id: 'courier', label: 'Курьер', description: 'Расчёт', icon: Truck, price: null },
-] as const;
+  { id: 'courier', label: 'Курьер', description: 'Расчёт', icon: Truck, price: null as number | null },
+];
 
 const PAYMENT_METHODS = [
   { id: 'manager', label: 'Обсудить с менеджером', description: 'Свяжемся для уточнения', icon: Headphones },
@@ -26,13 +26,13 @@ const PAYMENT_METHODS = [
 const formatPhoneNumber = (value: string): string => {
   // Убираем все нецифровые символы
   const digits = value.replace(/\D/g, '');
-  
+
   // Если начинается с 8, заменяем на 7
   const normalized = digits.startsWith('8') ? '7' + digits.slice(1) : digits;
-  
+
   // Ограничиваем до 11 цифр (код страны + 10 цифр)
   const limited = normalized.slice(0, 11);
-  
+
   // Форматируем
   if (limited.length === 0) return '';
   if (limited.length <= 1) return `+${limited}`;
@@ -190,7 +190,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
         <div className="checkout-header__info">
           <h1 className="checkout-header__title">Оформление заказа</h1>
           <span className="checkout-header__step">Шаг 1 из 1</span>
-      </div>
+        </div>
       </header>
 
       <div className="checkout-layout">
@@ -208,13 +208,13 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
                 </label>
                 <div className={`checkout-input-wrap ${showError('customerName') ? 'checkout-input-wrap--error' : ''}`}>
                   <User size={18} className="checkout-input-icon" />
-            <input
+                  <input
                     id="checkout-name"
                     className="checkout-input"
                     type="text"
                     placeholder="Иван Иванов"
-              value={form.customerName}
-              onChange={(e) => setForm((p) => ({ ...p, customerName: e.target.value }))}
+                    value={form.customerName}
+                    onChange={(e) => setForm((p) => ({ ...p, customerName: e.target.value }))}
                     onBlur={() => handleBlur('customerName')}
                   />
                   {showError('customerName') && <AlertCircle size={18} className="checkout-input-error-icon" />}
@@ -229,7 +229,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
               <div className="checkout-field">
                 <label className="checkout-label" htmlFor="checkout-phone">
                   Номер телефона <span className="checkout-required">*</span>
-          </label>
+                </label>
                 <div className={`checkout-input-wrap ${showError('phone') ? 'checkout-input-wrap--error' : ''}`}>
                   <Phone size={18} className="checkout-input-icon" />
                   <input
@@ -265,12 +265,12 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
                     key={method.id}
                     className={`checkout-delivery-option ${isActive ? 'checkout-delivery-option--active' : ''}`}
                   >
-                  <input
-                    type="radio"
-                    name="delivery"
+                    <input
+                      type="radio"
+                      name="delivery"
                       value={method.id}
                       checked={isActive}
-                    onChange={(e) => setForm((p) => ({ ...p, delivery: e.target.value }))}
+                      onChange={(e) => setForm((p) => ({ ...p, delivery: e.target.value }))}
                       className="checkout-delivery-radio"
                     />
                     <div className="checkout-delivery-icon">
@@ -286,7 +286,7 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
                     {isActive && (
                       <CheckCircle2 size={20} className="checkout-delivery-check" />
                     )}
-                </label>
+                  </label>
                 );
               })}
             </div>
@@ -299,15 +299,15 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
                 <div className="checkout-pickup-info__content">
                   <strong className="checkout-pickup-info__address">г. Калининград, ул. Эльблонгская, 2</strong>
                   <span className="checkout-pickup-info__hours">Ежедневно с 10:00 до 20:00, по предварительной договорённости</span>
-            </div>
-          </div>
+                </div>
+              </div>
             )}
 
-          {form.delivery !== 'pickup' && (
+            {form.delivery !== 'pickup' && (
               <div className="checkout-field checkout-field--spaced">
                 <label className="checkout-label" htmlFor="checkout-address">
                   Адрес доставки <span className="checkout-required">*</span>
-            </label>
+                </label>
                 <div className={`checkout-input-wrap ${showError('address') ? 'checkout-input-wrap--error' : ''}`}>
                   <MapPin size={18} className="checkout-input-icon" />
                   <input
@@ -438,12 +438,12 @@ export const CheckoutPage: React.FC<Props> = ({ cart, onNavigate, onSubmit, user
               <div className="checkout-summary__row">
                 <span>Товары ({cart.totalCount})</span>
                 <span>{formatCurrency(cart.totalPrice)}</span>
-      </div>
+              </div>
               <div className="checkout-summary__row">
                 <span>Доставка</span>
                 <span className={deliveryPrice === 0 ? 'checkout-summary__free' : ''}>
                   {selectedDelivery?.price === null ? 'Рассчитаем' : deliveryPrice === 0 ? 'Бесплатно' : formatCurrency(deliveryPrice)}
-              </span>
+                </span>
               </div>
             </div>
 

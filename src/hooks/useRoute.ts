@@ -13,11 +13,13 @@ type Route =
   | { name: 'privacy'; params: {} }
   | { name: 'offer'; params: {} }
   | { name: 'about'; params: {} }
+  | { name: 'chat_list'; params: {} }
+  | { name: 'chat_room'; params: { id: string } }
   | { name: 'notfound'; params: {} };
 
 const parseRoute = (): Route => {
   const path = window.location.pathname || '/';
-  
+
   if (path === '/' || path === '') return { name: 'home', params: {} };
   if (path === '/cart' || path === '/cart/') return { name: 'cart', params: {} };
   if (path === '/checkout' || path === '/checkout/') return { name: 'checkout', params: {} };
@@ -27,7 +29,11 @@ const parseRoute = (): Route => {
   if (path === '/privacy' || path === '/privacy/') return { name: 'privacy', params: {} };
   if (path === '/offer' || path === '/offer/') return { name: 'offer', params: {} };
   if (path === '/about' || path === '/about/') return { name: 'about', params: {} };
-  
+  if (path === '/lk/chat' || path === '/lk/chat/') return { name: 'chat_list', params: {} };
+
+  const chatRoomMatch = path.match(/^\/lk\/chat\/([^/]+)\/?$/);
+  if (chatRoomMatch) return { name: 'chat_room', params: { id: chatRoomMatch[1] } };
+
   // Каталог категории: /catalog/ulun/ или /catalog/shu-puer/
   // Проверяем существование категории
   const catalogMatch = path.match(/^\/catalog\/([^/]+)\/?$/);
@@ -40,11 +46,11 @@ const parseRoute = (): Route => {
     // Категория не найдена — 404
     return { name: 'notfound', params: {} };
   }
-  
+
   // Продукт: /product/123 или /product/123/
   const productMatch = path.match(/^\/product\/([^/]+)\/?$/);
   if (productMatch) return { name: 'product', params: { id: productMatch[1] } };
-  
+
   // Любой неизвестный путь — 404
   return { name: 'notfound', params: {} };
 };
@@ -63,7 +69,7 @@ export const useRoute = (): [Route, (path: string) => void] => {
     if (window.location.pathname !== normalized) {
       window.history.pushState({}, '', normalized);
     }
-      setRoute(parseRoute());
+    setRoute(parseRoute());
   };
 
   return [route, navigate];

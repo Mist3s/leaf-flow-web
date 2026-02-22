@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send, ChevronRight } from 'lucide-react';
+import { LogIn, Moon, ShoppingBag, Sun, UserRound, Search, X, Loader2, Sparkles, Send, ChevronRight, MessageSquare } from 'lucide-react';
 import { UserProfile } from '../types/auth';
 import { STORAGE_KEYS, TELEGRAM_APP_URL } from '../config';
 
 type Props = {
   theme: 'light' | 'dark';
   cartCount: number;
+  chatUnreadCount?: number;
   user: UserProfile | null;
   authLoading?: boolean;
   search?: string;
@@ -20,6 +21,7 @@ type Props = {
 export const Header: React.FC<Props> = memo(({
   theme,
   cartCount,
+  chatUnreadCount = 0,
   user,
   authLoading = false,
   search = '',
@@ -56,6 +58,10 @@ export const Header: React.FC<Props> = memo(({
 
   const handleCartClick = useCallback(() => {
     onNavigate('/cart/');
+  }, [onNavigate]);
+
+  const handleChatClick = useCallback(() => {
+    onNavigate('/lk/chat');
   }, [onNavigate]);
 
   const handleSearchClear = useCallback(() => {
@@ -117,6 +123,13 @@ export const Header: React.FC<Props> = memo(({
         <button className="header__action header__action--theme" onClick={onToggleTheme} aria-label="Сменить тему">
           {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
+
+        {user && (
+          <button className="header__action header__action--chat" onClick={handleChatClick} aria-label="Чат">
+            <MessageSquare size={18} />
+            {chatUnreadCount > 0 && <span className="header__chat-badge">{chatUnreadCount}</span>}
+          </button>
+        )}
 
         {authLoading ? (
           <div className="header__auth-loading">

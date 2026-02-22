@@ -2,7 +2,7 @@ import { AuthResponse, AuthTokens, UserProfile, TelegramLoginWidgetPayload } fro
 import { CartResponse } from './types/cart';
 import { Category, Product, ProductDetail, ProductListResponse } from './types/catalog';
 import { ReviewsData } from './types/reviews';
-import { API_BASE_URL, STORAGE_KEYS } from './config';
+import { API_BASE_URL, STORAGE_KEYS, CHAT_API_URL } from './config';
 
 const API_BASE = API_BASE_URL;
 const AUTH_KEY = STORAGE_KEYS.AUTH;
@@ -107,9 +107,10 @@ const ensureRefreshTokens = async (): Promise<AuthTokens | null> => {
   return refreshPromise;
 };
 
-const request = async <T>(path: string, options: RequestInit = {}, retry = true): Promise<T> => {
+const request = async <T>(path: string, options: RequestInit = {}, retry = true, customBaseUrl?: string): Promise<T> => {
   const tokens = getActiveTokens();
-  const res = await fetch(`${API_BASE}${path}`, {
+  const baseUrl = customBaseUrl || API_BASE;
+  const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -125,7 +126,7 @@ const request = async <T>(path: string, options: RequestInit = {}, retry = true)
       const newTokens = await ensureRefreshTokens();
       if (newTokens) {
         // Повторяем запрос с новым токеном
-        return request<T>(path, options, false);
+        return request<T>(path, options, false, customBaseUrl);
       }
     }
     // Если не удалось обновить токен, выбрасываем ошибку
@@ -207,12 +208,12 @@ export const telegramLink = async (payload: TelegramLoginWidgetPayload): Promise
     },
     body: JSON.stringify(payload),
   });
-  
+
   if (res.status === 409) {
     // Conflict — telegram уже привязан к другому аккаунту
     return { conflict: true };
   }
-  
+
   if (!res.ok) {
     const text = await res.text();
     let message = res.statusText;
@@ -224,7 +225,7 @@ export const telegramLink = async (payload: TelegramLoginWidgetPayload): Promise
     }
     return { error: message };
   }
-  
+
   return { user: await res.json() };
 };
 
@@ -363,3 +364,35 @@ export const getReviewsStats = async (): Promise<Omit<ReviewsData, 'reviews'>> =
     platforms: mapApiPlatformsToFrontend(data.platforms),
   };
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Чат
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { Conversation, ChatMessage } from './types/chat';
+
+export const fetchConversations = (params: { limit?: number } = {}) => {
+  const qs = new URLSearchParams();
+  qs.set('limit', String(params.limit ?? 20));
+  return request<Conversation[]>(`/v1/chat/conversations?${qs.toString()}`, {}, true, CHAT_API_URL);
+};
+
+export const fetchMessages = (conversationId: string, params: { limit?: number; cursor?: string } = {}) => {
+  const qs = new URLSearchParams();
+  qs.set('limit', String(params.limit ?? 50));
+  if (params.cursor) qs.set('cursor', params.cursor);
+  return request<ChatMessage[]>(`/v1/chat/conversations/${conversationId}/messages?${qs.toString()}`, {}, true, CHAT_API_URL);
+};
+
+export const createSupportConversation = () =>
+  request<Conversation>('/v1/chat/conversations/support', { method: 'POST' }, true, CHAT_API_URL);
+
+export const sendMessageRest = (conversationId: string, clientMsgId: string, body: string) =>
+  request<ChatMessage>(`/v1/chat/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({
+      client_msg_id: clientMsgId,
+      type: 'text',
+      body,
+    }),
+  }, true, CHAT_API_URL);

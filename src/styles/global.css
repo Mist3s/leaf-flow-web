@@ -47,4 +47,5 @@
 @import './pages/_order-success.css' layer(pages);
 @import './pages/_profile.css' layer(pages);
 @import './pages/_info-pages.css' layer(pages);
+@import './pages/_chat.css' layer(pages);
 @import './pages/_not-found.css' layer(pages);

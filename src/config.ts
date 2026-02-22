@@ -7,8 +7,15 @@
 // API
 // ═══════════════════════════════════════════════════════════════════════════
 // export const API_BASE_URL = 'https://app-stage.zavarka39.ru/api';
-export const API_BASE_URL = 'https://app.zavarka39.ru/api';
+export const API_BASE_URL = 'https://app-stage.zavarka39.ru/api';
 export const IMAGE_BASE_URL = 'https://app.zavarka39.ru';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Чат (WebSocket)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const WS_URL = 'wss://chat-stage.zavarka39.ru/ws/chat';
+export const CHAT_API_URL = 'https://chat-stage.zavarka39.ru/api';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Сайт
@@ -22,10 +29,10 @@ export const SITE_URL = 'https://zavarka39.ru';
 
 /** Username бота для Telegram Login Widget (без @) */
 // export const TELEGRAM_BOT_NAME = 'z39stage_bot';
-export const TELEGRAM_BOT_NAME = 'zavarka39_bot';
+export const TELEGRAM_BOT_NAME = 'z39stage_bot';
 
 /** Ссылка на Telegram Mini App */
-export const TELEGRAM_APP_URL = 'https://t.me/zavarka39_bot?startapp';
+export const TELEGRAM_APP_URL = 'https://t.me/z39stage_bot?startapp';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LocalStorage ключи

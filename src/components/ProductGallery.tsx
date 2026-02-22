@@ -51,15 +51,15 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
     if (!images || images.length === 0) {
       return [fallback];
     }
-    
+
     const activeImages = images
       .filter(img => img.is_active)
       .sort((a, b) => a.sort_order - b.sort_order);
-    
+
     if (activeImages.length === 0) {
       return [fallback];
     }
-    
+
     return activeImages.map(img => {
       const fallbackUrl = img.image_url || mainImage;
       return {
@@ -78,17 +78,17 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
+
   // Свайп
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isTouchMoved = useRef(false);
-  
+
   // Pinch-to-zoom
   const [initialPinchDistance, setInitialPinchDistance] = useState<number | null>(null);
   const [initialZoom, setInitialZoom] = useState(1);
-  
-  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
+
+  const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lightboxImageRef = useRef<HTMLDivElement>(null);
   const galleryMainRef = useRef<HTMLDivElement>(null);
   const lightboxContentRef = useRef<HTMLDivElement>(null);
@@ -314,7 +314,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
     if (touchStartX.current === null || e.touches.length !== 1) return;
     const diffX = e.touches[0].clientX - touchStartX.current;
     const diffY = e.touches[0].clientY - (touchStartY.current || 0);
-    
+
     // Если горизонтальное движение больше вертикального — это свайп
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
       isTouchMoved.current = true;
@@ -335,10 +335,10 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
       startAutoSlide();
       return;
     }
-    
+
     const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
     const diffX = endX - touchStartX.current;
-    
+
     if (Math.abs(diffX) > SWIPE_THRESHOLD && isTouchMoved.current) {
       if (diffX < 0) {
         // Свайп влево — следующее
@@ -348,7 +348,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
         setActiveIndex(prev => (prev - 1 + galleryImages.length) % galleryImages.length);
       }
     }
-    
+
     touchStartX.current = null;
     touchStartY.current = null;
     startAutoSlide();
@@ -401,7 +401,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
         )}
 
         {/* Основное изображение */}
-        <div 
+        <div
           ref={galleryMainRef}
           className={`product-gallery__main ${!showThumbnails ? 'product-gallery__main--single' : ''}`}
           onClick={handleGalleryClick}
@@ -417,7 +417,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
             decoding="async"
             draggable={false}
           />
-          
+
           {categoryLabel && (
             <span className="product-gallery__category">{categoryLabel}</span>
           )}
@@ -429,14 +429,14 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
           {/* Стрелки навигации (мобильные) */}
           {showThumbnails && (
             <>
-              <button 
+              <button
                 className="product-gallery__nav product-gallery__nav--prev"
                 onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
                 aria-label="Предыдущее"
               >
                 <ChevronLeft size={24} />
               </button>
-              <button 
+              <button
                 className="product-gallery__nav product-gallery__nav--next"
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
                 aria-label="Следующее"
@@ -484,7 +484,7 @@ export const ProductGallery: React.FC<Props> = memo(({ mainImage, images, produc
             </div>
           </div>
 
-          <div 
+          <div
             ref={lightboxContentRef}
             className="lightbox__content"
             onClick={e => e.stopPropagation()}
