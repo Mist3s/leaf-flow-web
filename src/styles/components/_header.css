@@ -341,7 +341,7 @@
   }
 
   .header__brand-name {
-    display: none;
+    display: block;
   }
 
   .header__brand-logo {
@@ -379,9 +379,7 @@
   }
 
   .header__promo {
-    font-size: 0.6rem;
-    padding: 0.3rem 0.4rem 0.3rem 0.5rem;
-    gap: 0.25rem;
+    display: none;
   }
 
   .header__promo-text {
