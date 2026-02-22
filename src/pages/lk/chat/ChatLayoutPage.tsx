@@ -17,6 +17,21 @@ export const ChatLayoutPage: React.FC<Props> = ({ conversationId, onNavigate }) 
     });
 
     useEffect(() => {
+        // Enforce Virtual Keyboard API on Android Chrome to correctly cover accessory bars
+        if (typeof navigator !== 'undefined' && 'virtualKeyboard' in navigator) {
+            try {
+                const vk = (navigator as any).virtualKeyboard;
+                vk.overlaysContent = true;
+                return () => {
+                    vk.overlaysContent = false;
+                };
+            } catch (e) {
+                console.error("VirtualKeyboard API failed", e);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
         const updateHeight = () => {
             if (window.visualViewport) {
                 setVvHeight(window.visualViewport.height);

@@ -286,7 +286,13 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                             onChange={e => setText(e.target.value)}
                             disabled={isClosed}
                         />
-                        <button type="submit" className="chat-input-form__submit" disabled={!text.trim() || isClosed}>
+                        <button
+                            type="submit"
+                            className="chat-input-form__submit"
+                            disabled={!text.trim() || isClosed}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onTouchStart={(e) => e.preventDefault()}
+                        >
                             <Send size={18} />
                         </button>
                     </form>

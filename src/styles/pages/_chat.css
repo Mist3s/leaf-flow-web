@@ -568,8 +568,8 @@
     .chat-layout {
         position: fixed;
         top: 60px;
-        /* Header is ~60px tall */
-        height: calc(var(--vv-height, 100dvh) - 60px);
+        /* Header is ~60px tall. env(keyboard-inset-bottom) fixes Chrome Android accessory bar overlap */
+        height: calc(var(--vv-height, 100dvh) - 60px - env(keyboard-inset-bottom, 0px));
         left: 0;
         right: 0;
         z-index: 50;
