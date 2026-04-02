@@ -8,6 +8,37 @@ const encodeCursor = (createdAt: string, id: string): string => {
     return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
+const localizeMessage = (msg: ChatMessage): ChatMessage => {
+    let payload = msg.payload;
+    // Парсим payload, если он пришел как строка
+    if (typeof payload === 'string') {
+        try { payload = JSON.parse(payload); } catch (e) { console.error('Error parsing payload', e); }
+    }
+
+    if (msg.type === 'system' && payload) {
+        if (payload.action === 'assigned') {
+            const adminName = payload.admin_name;
+            const body = adminName
+                ? `Сотрудник поддержки ${adminName} подключился к диалогу`
+                : 'Сотрудник поддержки подключился к диалогу';
+            return { ...msg, body };
+        }
+        if (payload.action === 'closed') {
+            return { ...msg, body: 'Диалог завершён' };
+        }
+    }
+    // Фолбек для старых сообщений без payload
+    if (msg.type === 'system' && msg.body && typeof msg.body === 'string') {
+        if (msg.body.includes('assigned to conversation')) {
+            return { ...msg, body: 'Сотрудник поддержки подключился к диалогу' };
+        }
+        if (msg.body.includes('Conversation closed')) {
+            return { ...msg, body: 'Диалог завершён' };
+        }
+    }
+    return msg;
+};
+
 interface ChatState {
     conversations: Conversation[];
     messages: Record<string, ChatMessage[]>; // map conversation_id -> messages
@@ -44,11 +75,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isConnecting, setIsConnecting] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const backoffRef = useRef(1000); // 1s initial backoff
-    const activeConversationRef = useRef<string | null>(null); // To access latest state inside ws callbacks
-    const conversationsRef = useRef<Conversation[]>([]); // To access latest conversations for subscriptions
+    const backoffRef = useRef(1000);
+    const activeConversationRef = useRef<string | null>(null);
+    const conversationsRef = useRef<Conversation[]>([]);
     const onNewMessageRef = useRef<((msg: ChatMessage) => void) | undefined>(undefined);
     const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const processedMsgIdsRef = useRef<Set<string>>(new Set());
 
     const setOnNewMessageCb = useCallback((cb: ((msg: ChatMessage) => void) | undefined) => {
         onNewMessageRef.current = cb;
@@ -58,18 +90,86 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => { activeConversationRef.current = activeConversationId; }, [activeConversationId]);
     useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
 
-    // Derived unread count
     const unreadCount = useMemo(() => {
         return conversations.reduce((acc, conv) => acc + (conv.unread_count || 0), 0);
     }, [conversations]);
+
+    const loadConversations = useCallback(async () => {
+        try {
+            const convs = await fetchConversations();
+            setConversations(convs);
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                convs.forEach(c => {
+                    wsRef.current?.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: c.id } }));
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load conversations', error);
+        }
+    }, []);
+
+    const handleIncomingMessage = useCallback((rawMsg: ChatMessage) => {
+        const msgId = rawMsg.id;
+        if (msgId && processedMsgIdsRef.current.has(msgId)) return;
+        if (msgId) processedMsgIdsRef.current.add(msgId);
+
+        // Periodic cleanup of Set
+        if (processedMsgIdsRef.current.size > 2000) {
+            const arr = Array.from(processedMsgIdsRef.current);
+            processedMsgIdsRef.current = new Set(arr.slice(1000));
+        }
+
+        const newMsg = localizeMessage(rawMsg);
+
+        // 1. Update messages state
+        setMessages(prev => {
+            const existing = prev[newMsg.conversation_id] || [];
+            const exists = existing.find(m => m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id);
+            if (exists) {
+                return {
+                    ...prev,
+                    [newMsg.conversation_id]: existing.map(m => (m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id) ? newMsg : m)
+                };
+            }
+            const updated = [...existing, newMsg];
+            updated.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            return { ...prev, [newMsg.conversation_id]: updated };
+        });
+
+        // 2. Update conversation list
+        setConversations(prev => {
+            const idx = prev.findIndex(c => c.id === newMsg.conversation_id);
+            if (idx === -1) {
+                loadConversations();
+                return prev;
+            }
+
+            const copy = [...prev];
+            const conv = { ...copy[idx] };
+            conv.updated_at = newMsg.created_at;
+            conv.last_message_at = newMsg.created_at;
+
+            // Increment unread if message from others and not in active chat
+            if (newMsg.sender_kind !== 'user' && activeConversationRef.current !== newMsg.conversation_id) {
+                conv.unread_count = (conv.unread_count || 0) + 1;
+            }
+
+            copy.splice(idx, 1);
+            copy.unshift(conv);
+            return copy;
+        });
+
+        // 3. Trigger global notification
+        if (newMsg.sender_kind !== 'user' && activeConversationRef.current !== newMsg.conversation_id) {
+            onNewMessageRef.current?.(newMsg);
+        }
+    }, [loadConversations]);
 
     const connectWs = useCallback(() => {
         const tokens = getStoredTokens();
         if (!tokens?.accessToken) return;
 
-        if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
-            return;
-        }
+        if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
         setIsConnecting(true);
         const ws = new WebSocket(`${WS_URL}?token=${tokens.accessToken}`);
@@ -78,33 +178,27 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ws.onopen = () => {
             setIsConnected(true);
             setIsConnecting(false);
-            backoffRef.current = 1000; // Reset backoff
-
-            // Subscribe to all known conversations to receive updates for them
+            backoffRef.current = 1000;
             conversationsRef.current.forEach(c => {
                 ws.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: c.id } }));
             });
-
-            // Start pinging
             if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
             pingIntervalRef.current = setInterval(() => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'ping', data: {} }));
-                }
-            }, 30000); // Ping every 30s
+                if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping', data: {} }));
+            }, 30000);
         };
 
         ws.onmessage = (event) => {
             try {
-                const msg = JSON.parse(event.data) as WsIncomingEvent;
-                if (msg.type === 'message.created' || msg.type === 'chat.message_created') {
-                    let newMsg: ChatMessage;
+                const rawMsg = JSON.parse(event.data);
+                const msgType = rawMsg.type || rawMsg.event; // Поддержка обоих вариантов
 
-                    if (msg.type === 'message.created') {
-                        newMsg = msg.data.message;
+                if (msgType === 'message.created' || msgType === 'chat.message_created') {
+                    let newMsg: ChatMessage;
+                    if (rawMsg.data && rawMsg.data.message) {
+                        newMsg = rawMsg.data.message;
                     } else {
-                        // Map backend outbox 'chat.message_created' payload
-                        const data = msg.data as any;
+                        const data = rawMsg.data || rawMsg;
                         newMsg = {
                             id: data.message_id || data.id,
                             conversation_id: data.conversation_id,
@@ -112,64 +206,37 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             sender_id: data.sender_id,
                             type: data.type || 'text',
                             body: data.body,
-                            payload: null,
+                            payload: data.payload || null, // ВАЖНО: берем payload!
                             client_msg_id: data.client_msg_id || data.message_id || data.id,
                             created_at: data.created_at || new Date().toISOString()
                         } as ChatMessage;
                     }
+                    handleIncomingMessage(newMsg);
+                } else if (msgType === 'conversation.updated' || msgType === 'chat.conversation_updated') {
+                    const data = rawMsg.data as any;
+                    const conversationId = data.conversation_id || data.id;
+                    const action = data.action;
 
-                    // 1. Update messages
-                    setMessages(prev => {
-                        const existing = prev[newMsg.conversation_id] || [];
-                        const exists = existing.find(m => m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id);
-                        if (exists) {
-                            return {
-                                ...prev,
-                                [newMsg.conversation_id]: existing.map(m => (m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id) ? newMsg : m)
-                            };
-                        }
-                        return {
-                            ...prev,
-                            [newMsg.conversation_id]: [...existing, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                        };
-                    });
-
-                    // 2. Update conversations list (move to top, update preview and unread count)
                     setConversations(prev => {
-                        const idx = prev.findIndex(c => c.id === newMsg.conversation_id);
-                        if (idx === -1) {
-                            // If conversation not in list, might be a new one. We can just reload list to be safe.
-                            loadConversations();
-                            return prev;
+                        const idx = prev.findIndex(c => c.id === conversationId);
+                        if (idx === -1) return prev;
+
+                        const copy = [...prev];
+                        const conv = { ...copy[idx] };
+
+                        if (action === 'closed') conv.status = 'closed';
+                        if (action === 'assigned') {
+                            conv.assignee_admin_id = data.admin_id;
+                            if (data.admin_name) conv.admin_name = data.admin_name;
                         }
 
-                        const updatedConvs = [...prev];
-                        const conv = { ...updatedConvs[idx] };
+                        conv.updated_at = new Date().toISOString();
 
-                        conv.updated_at = newMsg.created_at;
-                        conv.last_message_at = newMsg.created_at;
-                        conv.last_message_preview = newMsg.body || 'Вложение';
-
-                        // Always increment unread if from admin, let ChatRoom handle clearing it when read
-                        if (newMsg.sender_kind !== 'user') {
-                            conv.unread_count = (conv.unread_count || 0) + 1;
-                        }
-
-                        updatedConvs.splice(idx, 1);
-                        updatedConvs.unshift(conv);
-                        return updatedConvs;
+                        copy.splice(idx, 1);
+                        copy.unshift(conv);
+                        return copy;
                     });
-
-                    // 3. Process notification callback
-                    if (activeConversationRef.current !== newMsg.conversation_id && newMsg.sender_kind !== 'user') {
-                        if (onNewMessageRef.current) {
-                            onNewMessageRef.current(newMsg);
-                        }
-                    }
-                } else if (msg.type === 'conversation.updated' || msg.type === 'chat.conversation_updated') {
-                    // Re-fetch conversations to update status
-                    loadConversations();
-                } else if (msg.type === 'pong') {
+                } else if (msgType === 'pong') {
                     // Pong received
                 }
             } catch (err) {
@@ -182,18 +249,17 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setIsConnecting(false);
             wsRef.current = null;
             if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-            // Exponential backoff
             reconnectTimeoutRef.current = setTimeout(() => {
                 backoffRef.current = Math.min(backoffRef.current * 2, 30000);
                 connectWs();
             }, backoffRef.current);
         };
 
-        ws.onerror = (error) => {
-            console.error('WS Error', error);
-            // onclose will trigger reconnect
+        ws.onerror = (err) => {
+            console.error('WS error', err);
+            ws.close();
         };
-    }, []);
+    }, [handleIncomingMessage]);
 
     const disconnectWs = useCallback(() => {
         if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
@@ -203,58 +269,20 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             wsRef.current.onerror = null;
             wsRef.current.onmessage = null;
             wsRef.current.onopen = null;
-            // Catch the "closed before established" warning by omitting close() if CONNECTING
-            if (wsRef.current.readyState === WebSocket.OPEN) {
-                wsRef.current.close();
-            }
+            if (wsRef.current.readyState === WebSocket.OPEN) wsRef.current.close();
             wsRef.current = null;
         }
         setIsConnected(false);
         setIsConnecting(false);
     }, []);
 
-    const loadConversations = useCallback(async () => {
-        try {
-            const convs = await fetchConversations();
-
-            // Fetch the last message for each conversation in parallel to populate the preview
-            const convsWithPreview = await Promise.all(
-                convs.map(async (c) => {
-                    try {
-                        const msgs = await fetchMessages(c.id, { limit: 1 });
-                        if (msgs && msgs.length > 0) {
-                            c.last_message_preview = msgs[0].body || 'Вложение';
-                        }
-                    } catch (e) {
-                        console.error(`Failed to fetch preview for ${c.id}:`, e);
-                    }
-                    return c;
-                })
-            );
-
-            setConversations(convsWithPreview);
-
-            // Subscribe to newly loaded conversations if WS is open
-            if (wsRef.current?.readyState === WebSocket.OPEN) {
-                convsWithPreview.forEach(c => {
-                    wsRef.current?.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: c.id } }));
-                });
-            }
-        } catch (error) {
-            console.error('Failed to load conversations', error);
-        }
-    }, []);
-
     useEffect(() => {
-        // Initial load
         const tokens = getStoredTokens();
         if (tokens?.accessToken) {
             loadConversations();
             connectWs();
         }
 
-        // Check for token changes conceptually via polling or rely on app reloading via auth state.
-        // In our architecture, if the user logs out, we should disconnect.
         const interval = setInterval(() => {
             const t = getStoredTokens();
             if (!t && wsRef.current) {
@@ -271,16 +299,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             clearInterval(interval);
             disconnectWs();
         };
-    }, [connectWs, disconnectWs]);
+    }, [connectWs, disconnectWs, loadConversations]);
 
-    // Actions
     const setActiveConversation = useCallback((id: string | null) => {
         setActiveConversationId(id);
-        if (id) {
-            // Mark as read in WS if open
-            if (wsRef.current?.readyState === WebSocket.OPEN) {
-                wsRef.current.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: id } }));
-            }
+        if (id && wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: id } }));
         }
     }, []);
 
@@ -292,12 +316,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             while (keepLoading) {
                 const apiMessages = await fetchMessages(conversationId, { cursor });
-                if (apiMessages.length === 0) {
-                    break;
-                }
-
+                if (apiMessages.length === 0) break;
                 allFetchedMessages = [...allFetchedMessages, ...apiMessages];
-
                 if (apiMessages.length === 50) {
                     const lastMsg = apiMessages[apiMessages.length - 1];
                     cursor = encodeCursor(lastMsg.created_at, lastMsg.id);
@@ -308,11 +328,10 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             setMessages(prev => {
                 const existing = prev[conversationId] || [];
-                // merge and sort. Simple approach: append and deduplicate
-                const merged = [...existing, ...allFetchedMessages];
+                const localizedFetched = allFetchedMessages.map(localizeMessage);
+                const merged = [...existing, ...localizedFetched];
                 const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
                 unique.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
                 return { ...prev, [conversationId]: unique };
             });
         } catch (err) {
@@ -328,11 +347,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (exists) return prev;
                 return [conv, ...prev];
             });
-
             if (wsRef.current?.readyState === WebSocket.OPEN) {
                 wsRef.current.send(JSON.stringify({ type: 'subscribe', data: { conversation_id: conv.id } }));
             }
-
             return conv.id;
         } catch (err) {
             console.error('Failed to create support chat', err);
@@ -341,13 +358,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const sendMessage = useCallback(async (conversationId: string, text: string) => {
-        // Optimistic UI
         const clientMsgId = crypto.randomUUID();
         const tempMsg: ChatMessage = {
             id: `temp-${clientMsgId}`,
             conversation_id: conversationId,
             sender_kind: 'user',
-            sender_id: 0, // Doesn't matter for temp
+            sender_id: 0,
             type: 'text',
             body: text,
             payload: null,
@@ -364,24 +380,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setConversations(prev => {
             const idx = prev.findIndex(c => c.id === conversationId);
             if (idx === -1) return prev;
-
             const copy = [...prev];
-            const updatedConv = { ...copy[idx] };
-            updatedConv.last_message_preview = text;
-            updatedConv.updated_at = tempMsg.created_at;
-            updatedConv.last_message_at = tempMsg.created_at;
-
+            const updatedConv = { ...copy[idx], updated_at: tempMsg.created_at, last_message_at: tempMsg.created_at };
             copy.splice(idx, 1);
             copy.unshift(updatedConv);
             return copy;
         });
 
-        // Always use REST to send the message, as the backend only listens to HTTP POST for writes.
         try {
             const realMsg = await sendMessageRest(conversationId, clientMsgId, text);
             setMessages(prev => ({
                 ...prev,
-                [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? realMsg : m)
+                [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? localizeMessage(realMsg) : m)
             }));
         } catch (err) {
             setMessages(prev => ({
@@ -392,9 +402,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const markAsRead = useCallback((conversationId: string, lastMessageId: string) => {
-        // Clear locally immediately for UI response
         setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, unread_count: 0 } : c));
-
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'mark_read', data: { conversation_id: conversationId, last_message_id: lastMessageId } }));
         }

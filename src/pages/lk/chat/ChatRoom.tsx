@@ -252,19 +252,25 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                                     </div>
                                 </div>
                             )}
-                            <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--agent'}`}>
-                                <div className="chat-message__bubble">
-                                    <div className="chat-message__text">{msg.body}</div>
-                                    <div className="chat-message__meta">
-                                        <span className="chat-message__time">
-                                            {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                        {isUser && msg._localStatus === 'sending' && <Clock size={12} className="chat-message__status-icon" />}
-                                        {isUser && msg._localStatus === 'failed' && <AlertCircle size={12} className="chat-message__status-icon error" />}
-                                        {isUser && !msg._localStatus && <CheckSquare size={12} className="chat-message__status-icon success" />}
+                            {msg.type === 'system' ? (
+                                <div className="chat-system-message">
+                                    <span>{msg.body}</span>
+                                </div>
+                            ) : (
+                                <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--agent'}`}>
+                                    <div className="chat-message__bubble">
+                                        <div className="chat-message__text">{msg.body}</div>
+                                        <div className="chat-message__meta">
+                                            <span className="chat-message__time">
+                                                {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            {isUser && msg._localStatus === 'sending' && <Clock size={12} className="chat-message__status-icon" />}
+                                            {isUser && msg._localStatus === 'failed' && <AlertCircle size={12} className="chat-message__status-icon error" />}
+                                            {isUser && !msg._localStatus && <CheckSquare size={12} className="chat-message__status-icon success" />}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </React.Fragment>
                     );
                 })}

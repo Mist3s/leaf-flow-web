@@ -13,6 +13,8 @@ export interface Conversation {
     topic_id: number | null;
     status: ConversationStatus;
     assignee_admin_id: number | null;
+    admin_name: string | null;
+    user_name: string;
     unread_count?: number;
     last_message_preview?: string;
     last_message_at: string;
@@ -41,7 +43,7 @@ export interface ChatMessage {
 export type WsIncomingEvent =
     | { type: 'message.created'; data: { message: ChatMessage } }
     | { type: 'chat.message_created'; data: any }
-    | { type: 'conversation.updated'; data: { action: 'assigned' | 'closed'; conversation_id: string } }
+    | { type: 'conversation.updated'; data: { action: 'assigned' | 'closed'; conversation_id: string; admin_id?: number; admin_name?: string } }
     | { type: 'chat.conversation_updated'; data: any }
     | { type: 'pong'; data: Record<string, never> }
     | { type: 'error'; data: { code: string; detail: string } };

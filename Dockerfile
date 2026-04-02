@@ -38,7 +38,7 @@ RUN npm ci
 COPY . .
 
 # Собираем приложение с pre-rendering
-RUN npm run build
+RUN npm run build:prerender
 #RUN npm run build
 
 # --- PROD 2: финальный образ nginx ---
