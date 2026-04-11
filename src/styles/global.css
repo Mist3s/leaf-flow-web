@@ -38,6 +38,7 @@
 @import './components/_markdown-content.css' layer(components);
 @import './components/_reviews.css' layer(components);
 @import './components/_scroll-to-top.css' layer(components);
+@import './components/_emoji-picker.css' layer(components);
 
 /* ── 6. Pages ── */
 @import './pages/_home.css' layer(pages);

@@ -125,6 +125,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 conv.last_message_preview = newMsg.body.length > 150 ? newMsg.body.slice(0, 150) : newMsg.body;
             }
 
+            // Оптимистичный инкремент unread_count для входящих сообщений,
+            // если диалог не активен (пользователь его не видит)
+            if (newMsg.sender_kind !== 'user' && activeConversationRef.current !== newMsg.conversation_id) {
+                conv.unread_count = (conv.unread_count || 0) + 1;
+            }
+
             copy.splice(idx, 1);
             copy.unshift(conv);
             return copy;

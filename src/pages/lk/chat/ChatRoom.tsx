@@ -2,6 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, CheckSquare, Clock, AlertCircle, ChevronUp } from 'lucide-react';
 import { useChatContext } from '../../../store/ChatContext';
 import { PageLoader } from '../../../components/PageLoader';
+import { EmojiPickerButton } from '../../../components/EmojiPickerButton';
+import { LinkPreviewCard } from '../../../components/LinkPreviewCard';
+import { isEmojiOnly, getEmojiFontSize } from '../../../utils/emoji';
+import { renderLinkedText, parseLinks, isLinkOnly } from '../../../utils/linkify';
 import { ChatMessage } from '../../../types/chat';
 
 type Props = {
@@ -29,6 +33,7 @@ const renderSystemBody = (msg: ChatMessage): string => {
 export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
     const { conversations, messages, loadMessagesFor, loadMoreMessages, hasMoreMessages, sendMessage, setActiveConversation, markAsRead } = useChatContext();
     const [text, setText] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesTopRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -255,7 +260,14 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                 setIsFadingOut(false);
             }, 400);
         }
+        // Вернуть фокус на поле ввода (fix потери клавиатуры на mobile)
+        requestAnimationFrame(() => inputRef.current?.focus());
     };
+
+    const handleEmojiSelect = useCallback((emoji: string) => {
+        setText(prev => prev + emoji);
+        requestAnimationFrame(() => inputRef.current?.focus());
+    }, []);
 
     if (!conversation) {
         return <div className="chat-room"><PageLoader message="Загрузка чата..." /></div>;
@@ -317,10 +329,33 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                                 <div className="chat-system-message">
                                     <span>{renderSystemBody(msg)}</span>
                                 </div>
+                            ) : isEmojiOnly(msg.body) ? (
+                                /* Emoji-only: крупно, без пузыря */
+                                <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--agent'}`}>
+                                    <div className="chat-message__emoji-only" style={{ fontSize: getEmojiFontSize(msg.body!) }}>
+                                        {msg.body}
+                                    </div>
+                                    <div className="chat-message__meta">
+                                        <span className="chat-message__time">
+                                            {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        {isUser && msg._localStatus === 'sending' && <Clock size={12} className="chat-message__status-icon" />}
+                                        {isUser && msg._localStatus === 'failed' && <AlertCircle size={12} className="chat-message__status-icon error" />}
+                                        {isUser && !msg._localStatus && <CheckSquare size={12} className="chat-message__status-icon success" />}
+                                    </div>
+                                </div>
                             ) : (
                                 <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--agent'}`}>
                                     <div className="chat-message__bubble">
-                                        <div className="chat-message__text">{msg.body}</div>
+                                        {/* Если сообщение — только ссылки, текст не дублируем */}
+                                        {msg.body && !isLinkOnly(msg.body) && (
+                                            <div className="chat-message__text">
+                                                {renderLinkedText(msg.body)}
+                                            </div>
+                                        )}
+                                        {msg.body && parseLinks(msg.body).filter(s => s.kind === 'link').map((seg, i) => (
+                                            <LinkPreviewCard key={i} url={(seg as { kind: 'link'; url: string; display: string }).url} />
+                                        ))}
                                         <div className="chat-message__meta">
                                             <span className="chat-message__time">
                                                 {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
@@ -345,7 +380,9 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                     </div>
                 ) : (
                     <form className="chat-input-form" onSubmit={handleSubmit}>
+                        <EmojiPickerButton onEmojiSelect={handleEmojiSelect} />
                         <input
+                            ref={inputRef}
                             type="text"
                             className="chat-input-form__field"
                             placeholder="Введите сообщение..."
