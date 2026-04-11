@@ -3,7 +3,7 @@ import { ChevronUp } from 'lucide-react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { PageLoader } from './components/PageLoader';
-import { useAuth } from './hooks/useAuth';
+import { useAuthContext as useAuth } from './store/AuthContext';
 import { useCart } from './hooks/useCart';
 import { useRoute } from './hooks/useRoute';
 import { useTheme } from './hooks/useTheme';

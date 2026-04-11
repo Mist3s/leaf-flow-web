@@ -369,19 +369,20 @@ export const getReviewsStats = async (): Promise<Omit<ReviewsData, 'reviews'>> =
 // Чат
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { Conversation, ChatMessage } from './types/chat';
+import { Conversation, ChatMessage, PaginatedConversations, PaginatedMessages } from './types/chat';
 
-export const fetchConversations = (params: { limit?: number } = {}) => {
+export const fetchConversations = (params: { limit?: number; cursor?: string } = {}) => {
   const qs = new URLSearchParams();
   qs.set('limit', String(params.limit ?? 20));
-  return request<Conversation[]>(`/v1/chat/conversations?${qs.toString()}`, {}, true, CHAT_API_URL);
+  if (params.cursor) qs.set('cursor', params.cursor);
+  return request<PaginatedConversations>(`/v1/chat/conversations?${qs.toString()}`, {}, true, CHAT_API_URL);
 };
 
 export const fetchMessages = (conversationId: string, params: { limit?: number; cursor?: string } = {}) => {
   const qs = new URLSearchParams();
   qs.set('limit', String(params.limit ?? 50));
   if (params.cursor) qs.set('cursor', params.cursor);
-  return request<ChatMessage[]>(`/v1/chat/conversations/${conversationId}/messages?${qs.toString()}`, {}, true, CHAT_API_URL);
+  return request<PaginatedMessages>(`/v1/chat/conversations/${conversationId}/messages?${qs.toString()}`, {}, true, CHAT_API_URL);
 };
 
 export const createSupportConversation = () =>

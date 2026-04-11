@@ -1,43 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode, useMemo } from 'react';
-import { Conversation, ChatMessage, WsIncomingEvent, WsOutgoingEvent } from '../types/chat';
-import { fetchConversations, fetchMessages, createSupportConversation, sendMessageRest, getStoredTokens } from '../api';
+import { Conversation, ChatMessage } from '../types/chat';
+import { fetchConversations, fetchMessages, createSupportConversation, sendMessageRest } from '../api';
+import { useAuthContext } from './AuthContext';
 import { WS_URL } from '../config';
-
-const encodeCursor = (createdAt: string, id: string): string => {
-    const raw = `${createdAt}|${id}`;
-    return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
-
-const localizeMessage = (msg: ChatMessage): ChatMessage => {
-    let payload = msg.payload;
-    // Парсим payload, если он пришел как строка
-    if (typeof payload === 'string') {
-        try { payload = JSON.parse(payload); } catch (e) { console.error('Error parsing payload', e); }
-    }
-
-    if (msg.type === 'system' && payload) {
-        if (payload.action === 'assigned') {
-            const adminName = payload.admin_name;
-            const body = adminName
-                ? `Сотрудник поддержки ${adminName} подключился к диалогу`
-                : 'Сотрудник поддержки подключился к диалогу';
-            return { ...msg, body };
-        }
-        if (payload.action === 'closed') {
-            return { ...msg, body: 'Диалог завершён' };
-        }
-    }
-    // Фолбек для старых сообщений без payload
-    if (msg.type === 'system' && msg.body && typeof msg.body === 'string') {
-        if (msg.body.includes('assigned to conversation')) {
-            return { ...msg, body: 'Сотрудник поддержки подключился к диалогу' };
-        }
-        if (msg.body.includes('Conversation closed')) {
-            return { ...msg, body: 'Диалог завершён' };
-        }
-    }
-    return msg;
-};
 
 interface ChatState {
     conversations: Conversation[];
@@ -48,11 +13,16 @@ interface ChatState {
     isConnecting: boolean;
 }
 
+/** Курсоры пагинации сообщений (per-conversation) */
+type MessageCursors = Record<string, string | null>;
+
 interface ChatContextValue extends ChatState {
     setActiveConversation: (id: string | null) => void;
     sendMessage: (conversationId: string, text: string) => void;
     markAsRead: (conversationId: string, lastMessageId: string) => void;
-    loadMessagesFor: (conversationId: string, cursor?: string) => Promise<void>;
+    loadMessagesFor: (conversationId: string) => Promise<void>;
+    loadMoreMessages: (conversationId: string) => Promise<void>;
+    hasMoreMessages: (conversationId: string) => boolean;
     createSupport: () => Promise<string | null>;
     // Global notification callback for components to hook into
     onNewMessage?: (msg: ChatMessage) => void;
@@ -68,8 +38,12 @@ export const useChatContext = () => {
 };
 
 export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { auth } = useAuthContext();
+    const accessToken = auth.tokens?.accessToken ?? null;
+
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+    const [messageCursors, setMessageCursors] = useState<MessageCursors>({});
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -78,9 +52,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const backoffRef = useRef(1000);
     const activeConversationRef = useRef<string | null>(null);
     const conversationsRef = useRef<Conversation[]>([]);
+    const messagesRef = useRef<Record<string, ChatMessage[]>>({});
     const onNewMessageRef = useRef<((msg: ChatMessage) => void) | undefined>(undefined);
     const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const processedMsgIdsRef = useRef<Set<string>>(new Set());
 
     const setOnNewMessageCb = useCallback((cb: ((msg: ChatMessage) => void) | undefined) => {
         onNewMessageRef.current = cb;
@@ -89,6 +63,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Sync refs
     useEffect(() => { activeConversationRef.current = activeConversationId; }, [activeConversationId]);
     useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     const unreadCount = useMemo(() => {
         return conversations.reduce((acc, conv) => acc + (conv.unread_count || 0), 0);
@@ -96,7 +71,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const loadConversations = useCallback(async () => {
         try {
-            const convs = await fetchConversations();
+            const { items: convs } = await fetchConversations();
             setConversations(convs);
             if (wsRef.current?.readyState === WebSocket.OPEN) {
                 convs.forEach(c => {
@@ -109,37 +84,33 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const handleIncomingMessage = useCallback((rawMsg: ChatMessage) => {
-        const msgId = rawMsg.id;
-        if (msgId && processedMsgIdsRef.current.has(msgId)) return;
-        if (msgId) processedMsgIdsRef.current.add(msgId);
+        const newMsg = rawMsg;
 
-        // Periodic cleanup of Set
-        if (processedMsgIdsRef.current.size > 2000) {
-            const arr = Array.from(processedMsgIdsRef.current);
-            processedMsgIdsRef.current = new Set(arr.slice(1000));
-        }
-
-        const newMsg = localizeMessage(rawMsg);
-
-        // 1. Update messages state
+        // Дедупликация: проверяем по текущему массиву сообщений
         setMessages(prev => {
             const existing = prev[newMsg.conversation_id] || [];
-            const exists = existing.find(m => m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id);
-            if (exists) {
+            const isDuplicate = existing.some(m => m.id === newMsg.id || (m.client_msg_id && m.client_msg_id === newMsg.client_msg_id));
+
+            if (isDuplicate) {
+                // Обновляем существующее сообщение (напр. temp → реальное)
                 return {
                     ...prev,
-                    [newMsg.conversation_id]: existing.map(m => (m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id) ? newMsg : m)
+                    [newMsg.conversation_id]: existing.map(m =>
+                        (m.client_msg_id === newMsg.client_msg_id || m.id === newMsg.id) ? newMsg : m
+                    )
                 };
             }
+
             const updated = [...existing, newMsg];
             updated.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             return { ...prev, [newMsg.conversation_id]: updated };
         });
 
-        // 2. Update conversation list
+        // Обновить conversation list (поднять вверх, обновить preview)
         setConversations(prev => {
             const idx = prev.findIndex(c => c.id === newMsg.conversation_id);
             if (idx === -1) {
+                // Новый диалог — перезагрузить список
                 loadConversations();
                 return prev;
             }
@@ -149,9 +120,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             conv.updated_at = newMsg.created_at;
             conv.last_message_at = newMsg.created_at;
 
-            // Increment unread if message from others and not in active chat
-            if (newMsg.sender_kind !== 'user' && activeConversationRef.current !== newMsg.conversation_id) {
-                conv.unread_count = (conv.unread_count || 0) + 1;
+            // Обновить превью последнего сообщения
+            if (newMsg.type === 'text' && newMsg.body) {
+                conv.last_message_preview = newMsg.body.length > 150 ? newMsg.body.slice(0, 150) : newMsg.body;
             }
 
             copy.splice(idx, 1);
@@ -159,20 +130,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return copy;
         });
 
-        // 3. Trigger global notification
+        // Trigger global notification (если сообщение от другой стороны и не в активном чате)
         if (newMsg.sender_kind !== 'user' && activeConversationRef.current !== newMsg.conversation_id) {
             onNewMessageRef.current?.(newMsg);
         }
     }, [loadConversations]);
 
     const connectWs = useCallback(() => {
-        const tokens = getStoredTokens();
-        if (!tokens?.accessToken) return;
-
+        if (!accessToken) return;
         if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
         setIsConnecting(true);
-        const ws = new WebSocket(`${WS_URL}?token=${tokens.accessToken}`);
+        const ws = new WebSocket(`${WS_URL}?token=${accessToken}`);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -191,53 +160,96 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ws.onmessage = (event) => {
             try {
                 const rawMsg = JSON.parse(event.data);
-                const msgType = rawMsg.type || rawMsg.event; // Поддержка обоих вариантов
 
-                if (msgType === 'message.created' || msgType === 'chat.message_created') {
-                    let newMsg: ChatMessage;
-                    if (rawMsg.data && rawMsg.data.message) {
-                        newMsg = rawMsg.data.message;
-                    } else {
-                        const data = rawMsg.data || rawMsg;
-                        newMsg = {
-                            id: data.message_id || data.id,
-                            conversation_id: data.conversation_id,
-                            sender_kind: data.sender_kind,
-                            sender_id: data.sender_id,
-                            type: data.type || 'text',
-                            body: data.body,
-                            payload: data.payload || null, // ВАЖНО: берем payload!
-                            client_msg_id: data.client_msg_id || data.message_id || data.id,
-                            created_at: data.created_at || new Date().toISOString()
-                        } as ChatMessage;
+                switch (rawMsg.type) {
+                    case 'message.created': {
+                        const newMsg: ChatMessage = rawMsg.data.message;
+                        handleIncomingMessage(newMsg);
+                        break;
                     }
-                    handleIncomingMessage(newMsg);
-                } else if (msgType === 'conversation.updated' || msgType === 'chat.conversation_updated') {
-                    const data = rawMsg.data as any;
-                    const conversationId = data.conversation_id || data.id;
-                    const action = data.action;
 
-                    setConversations(prev => {
-                        const idx = prev.findIndex(c => c.id === conversationId);
-                        if (idx === -1) return prev;
+                    case 'conversation.updated': {
+                        const data = rawMsg.data;
+                        const conversationId = data.conversation_id;
+                        const action = data.action;
 
-                        const copy = [...prev];
-                        const conv = { ...copy[idx] };
+                        setConversations(prev => {
+                            const idx = prev.findIndex(c => c.id === conversationId);
+                            if (idx === -1) return prev;
 
-                        if (action === 'closed') conv.status = 'closed';
-                        if (action === 'assigned') {
-                            conv.assignee_admin_id = data.admin_id;
-                            if (data.admin_name) conv.admin_name = data.admin_name;
+                            const copy = [...prev];
+                            const conv = { ...copy[idx] };
+
+                            if (action === 'closed') conv.status = 'closed';
+                            if (action === 'assigned') {
+                                conv.assignee_admin_id = data.admin_id;
+                                if (data.admin_name) conv.admin_name = data.admin_name;
+                            }
+
+                            conv.updated_at = new Date().toISOString();
+
+                            copy.splice(idx, 1);
+                            copy.unshift(conv);
+                            return copy;
+                        });
+                        break;
+                    }
+
+                    case 'conversation.created': {
+                        // Новый диалог — перезагружаем список
+                        loadConversations();
+                        break;
+                    }
+
+                    case 'message.ack': {
+                        const { client_msg_id, id, created_at } = rawMsg.data;
+
+                        // Определяем conversation_id синхронно через ref
+                        let ackConvId: string | null = null;
+                        for (const convId of Object.keys(messagesRef.current)) {
+                            if (messagesRef.current[convId]?.some(m => m.client_msg_id === client_msg_id)) {
+                                ackConvId = convId;
+                                break;
+                            }
                         }
 
-                        conv.updated_at = new Date().toISOString();
+                        if (ackConvId) {
+                            const convIdToUpdate = ackConvId;
+                            // Обновляем оптимистичное сообщение серверными данными
+                            setMessages(prev => ({
+                                ...prev,
+                                [convIdToUpdate]: (prev[convIdToUpdate] || []).map(m =>
+                                    m.client_msg_id === client_msg_id
+                                        ? { ...m, id, created_at, _localStatus: undefined }
+                                        : m
+                                )
+                            }));
 
-                        copy.splice(idx, 1);
-                        copy.unshift(conv);
-                        return copy;
-                    });
-                } else if (msgType === 'pong') {
-                    // Pong received
+                            // Обновить timestamp в conversation list
+                            setConversations(prev => prev.map(c =>
+                                c.id === convIdToUpdate
+                                    ? { ...c, updated_at: created_at, last_message_at: created_at }
+                                    : c
+                            ));
+                        }
+                        break;
+                    }
+
+                    case 'read_state.updated': {
+                        const { conversation_id, unread_count: newUnread } = rawMsg.data;
+                        setConversations(prev => prev.map(c =>
+                            c.id === conversation_id ? { ...c, unread_count: newUnread } : c
+                        ));
+                        break;
+                    }
+
+                    case 'pong':
+                        // Pong received
+                        break;
+
+                    case 'error':
+                        console.error('WS server error', rawMsg.data);
+                        break;
                 }
             } catch (err) {
                 console.error('WS parse error', err);
@@ -259,7 +271,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('WS error', err);
             ws.close();
         };
-    }, [handleIncomingMessage]);
+    }, [accessToken, handleIncomingMessage, loadConversations]);
 
     const disconnectWs = useCallback(() => {
         if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
@@ -276,30 +288,22 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsConnecting(false);
     }, []);
 
+    // Event-driven auth: подключаемся/отключаемся при изменении токена
     useEffect(() => {
-        const tokens = getStoredTokens();
-        if (tokens?.accessToken) {
+        if (accessToken) {
             loadConversations();
             connectWs();
+        } else {
+            disconnectWs();
+            setConversations([]);
+            setMessages({});
+            setMessageCursors({});
         }
 
-        const interval = setInterval(() => {
-            const t = getStoredTokens();
-            if (!t && wsRef.current) {
-                disconnectWs();
-                setConversations([]);
-                setMessages({});
-            } else if (t && !wsRef.current && !reconnectTimeoutRef.current) {
-                loadConversations();
-                connectWs();
-            }
-        }, 2000);
-
         return () => {
-            clearInterval(interval);
             disconnectWs();
         };
-    }, [connectWs, disconnectWs, loadConversations]);
+    }, [accessToken, connectWs, disconnectWs, loadConversations]);
 
     const setActiveConversation = useCallback((id: string | null) => {
         setActiveConversationId(id);
@@ -308,36 +312,50 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, []);
 
-    const loadMessagesFor = useCallback(async (conversationId: string, initialCursor?: string) => {
+    // Загружает первую страницу сообщений (при входе в чат)
+    const loadMessagesFor = useCallback(async (conversationId: string) => {
         try {
-            let cursor = initialCursor;
-            let keepLoading = true;
-            let allFetchedMessages: ChatMessage[] = [];
-
-            while (keepLoading) {
-                const apiMessages = await fetchMessages(conversationId, { cursor });
-                if (apiMessages.length === 0) break;
-                allFetchedMessages = [...allFetchedMessages, ...apiMessages];
-                if (apiMessages.length === 50) {
-                    const lastMsg = apiMessages[apiMessages.length - 1];
-                    cursor = encodeCursor(lastMsg.created_at, lastMsg.id);
-                } else {
-                    keepLoading = false;
-                }
-            }
+            const { items, next_cursor } = await fetchMessages(conversationId, { limit: 50 });
 
             setMessages(prev => {
                 const existing = prev[conversationId] || [];
-                const localizedFetched = allFetchedMessages.map(localizeMessage);
-                const merged = [...existing, ...localizedFetched];
+                const merged = [...existing, ...items];
                 const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
                 unique.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                 return { ...prev, [conversationId]: unique };
             });
+
+            setMessageCursors(prev => ({ ...prev, [conversationId]: next_cursor }));
         } catch (err) {
             console.error('Failed to load messages', err);
         }
     }, []);
+
+    // Подгружает предыдущие сообщения по cursor (при скролле вверх)
+    const loadMoreMessages = useCallback(async (conversationId: string) => {
+        const cursor = messageCursors[conversationId];
+        if (!cursor) return;
+
+        try {
+            const { items, next_cursor } = await fetchMessages(conversationId, { cursor, limit: 50 });
+
+            setMessages(prev => {
+                const existing = prev[conversationId] || [];
+                const merged = [...items, ...existing];
+                const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+                unique.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                return { ...prev, [conversationId]: unique };
+            });
+
+            setMessageCursors(prev => ({ ...prev, [conversationId]: next_cursor }));
+        } catch (err) {
+            console.error('Failed to load more messages', err);
+        }
+    }, [messageCursors]);
+
+    const hasMoreMessages = useCallback((conversationId: string) => {
+        return messageCursors[conversationId] != null;
+    }, [messageCursors]);
 
     const createSupport = useCallback(async () => {
         try {
@@ -381,28 +399,43 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const idx = prev.findIndex(c => c.id === conversationId);
             if (idx === -1) return prev;
             const copy = [...prev];
-            const updatedConv = { ...copy[idx], updated_at: tempMsg.created_at, last_message_at: tempMsg.created_at };
+            const updatedConv = {
+                ...copy[idx],
+                updated_at: tempMsg.created_at,
+                last_message_at: tempMsg.created_at,
+                last_message_preview: text.length > 150 ? text.slice(0, 150) : text
+            };
             copy.splice(idx, 1);
             copy.unshift(updatedConv);
             return copy;
         });
 
-        try {
-            const realMsg = await sendMessageRest(conversationId, clientMsgId, text);
-            setMessages(prev => ({
-                ...prev,
-                [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? localizeMessage(realMsg) : m)
+        // Отправка через WS (основной путь) с фолбэком на REST
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'message.send',
+                data: { conversation_id: conversationId, client_msg_id: clientMsgId, body: text, type: 'text' }
             }));
-        } catch (err) {
-            setMessages(prev => ({
-                ...prev,
-                [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? { ...m, _localStatus: 'failed' } : m)
-            }));
+            // ACK придёт через message.ack → обновит id/created_at и снимет _localStatus
+        } else {
+            // Фолбэк: REST, если WS недоступен
+            try {
+                const realMsg = await sendMessageRest(conversationId, clientMsgId, text);
+                setMessages(prev => ({
+                    ...prev,
+                    [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? realMsg : m)
+                }));
+            } catch (err) {
+                setMessages(prev => ({
+                    ...prev,
+                    [conversationId]: prev[conversationId].map(m => m.client_msg_id === clientMsgId ? { ...m, _localStatus: 'failed' } : m)
+                }));
+            }
         }
     }, []);
 
+    // mark_read: отправляем через WS, обновление unread_count придёт через read_state.updated
     const markAsRead = useCallback((conversationId: string, lastMessageId: string) => {
-        setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, unread_count: 0 } : c));
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'mark_read', data: { conversation_id: conversationId, last_message_id: lastMessageId } }));
         }
@@ -420,6 +453,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             sendMessage,
             markAsRead,
             loadMessagesFor,
+            loadMoreMessages,
+            hasMoreMessages,
             createSupport,
             onNewMessage: onNewMessageRef.current,
             setOnNewMessage: setOnNewMessageCb

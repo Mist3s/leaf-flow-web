@@ -96,7 +96,7 @@ export const ChatSidebar: React.FC<Props> = ({ activeId, onNavigate }) => {
                                     </div>
                                     <div className="chat-conversation-item__bottom">
                                         <p className="chat-conversation-item__preview">
-                                            {conv.status === 'closed' ? 'Диалог закрыт' : 'Диалог открыт'}
+                                            {conv.last_message_preview || (conv.status === 'closed' ? 'Диалог закрыт' : 'Нет сообщений')}
                                         </p>
                                         {(conv.unread_count || 0) > 0 && (
                                             <span className="chat-conversation-item__badge">

@@ -1,20 +1,41 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ArrowLeft, Send, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { ArrowLeft, Send, CheckSquare, Clock, AlertCircle, ChevronUp } from 'lucide-react';
 import { useChatContext } from '../../../store/ChatContext';
 import { PageLoader } from '../../../components/PageLoader';
+import { ChatMessage } from '../../../types/chat';
 
 type Props = {
     conversationId: string;
     onNavigate: (path: string) => void;
 };
 
+/** Рендер системного сообщения по payload.action */
+const renderSystemBody = (msg: ChatMessage): string => {
+    if (msg.payload) {
+        if (msg.payload.action === 'assigned') {
+            const name = msg.payload.admin_name;
+            return name
+                ? `Сотрудник поддержки ${name} подключился к диалогу`
+                : 'Сотрудник поддержки подключился к диалогу';
+        }
+        if (msg.payload.action === 'closed') {
+            return 'Диалог завершён';
+        }
+    }
+    // Fallback: показываем body как есть
+    return msg.body || '';
+};
+
 export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
-    const { conversations, messages, loadMessagesFor, sendMessage, setActiveConversation, markAsRead } = useChatContext();
+    const { conversations, messages, loadMessagesFor, loadMoreMessages, hasMoreMessages, sendMessage, setActiveConversation, markAsRead } = useChatContext();
     const [text, setText] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesTopRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const firstUnreadRef = useRef<HTMLDivElement>(null);
     const [hasScrolledOnLoad, setHasScrolledOnLoad] = useState(false);
     const [showUnreadSeparator, setShowUnreadSeparator] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const conversation = conversations.find(c => c.id === conversationId);
 
@@ -47,7 +68,7 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
             idleTimer = setTimeout(() => setIsIdle(true), 30000);
         };
 
-        // Initialize 
+        // Initialize
         resetIdle();
 
         // Listen for activity
@@ -116,10 +137,6 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
     useEffect(() => {
         const handleFocus = () => {
             setIsFocused(true);
-            // If they focus, we check if they are at the bottom to clear it
-            if (isAtBottom && showUnreadSeparator) {
-                // We let the other effect handle the clearing
-            }
         };
         const handleBlur = () => setIsFocused(false);
         window.addEventListener('focus', handleFocus);
@@ -128,7 +145,7 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
             window.removeEventListener('focus', handleFocus);
             window.removeEventListener('blur', handleBlur);
         };
-    }, [isAtBottom, showUnreadSeparator]);
+    }, []);
 
     // Track if user is at the bottom of the chat
     useEffect(() => {
@@ -141,6 +158,41 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
         }
         return () => observer.disconnect();
     }, []);
+
+    // Lazy load: подгрузка предыдущих сообщений при скролле вверх
+    useEffect(() => {
+        if (!hasMoreMessages(conversationId)) return;
+
+        const observer = new IntersectionObserver(
+            async ([entry]) => {
+                if (entry.isIntersecting && !isLoadingMore) {
+                    setIsLoadingMore(true);
+
+                    // Запоминаем текущую высоту скролла чтобы восстановить позицию
+                    const container = messagesContainerRef.current;
+                    const prevScrollHeight = container?.scrollHeight || 0;
+
+                    await loadMoreMessages(conversationId);
+
+                    // Восстанавливаем позицию скролла после подгрузки
+                    requestAnimationFrame(() => {
+                        if (container) {
+                            const newScrollHeight = container.scrollHeight;
+                            container.scrollTop += newScrollHeight - prevScrollHeight;
+                        }
+                    });
+
+                    setIsLoadingMore(false);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (messagesTopRef.current) {
+            observer.observe(messagesTopRef.current);
+        }
+        return () => observer.disconnect();
+    }, [conversationId, hasMoreMessages, loadMoreMessages, isLoadingMore]);
 
     // Handle visual viewport resize (e.g. mobile keyboard appearing)
     useEffect(() => {
@@ -227,7 +279,16 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                 </div>
             </div>
 
-            <div className="chat-room__messages">
+            <div className="chat-room__messages" ref={messagesContainerRef}>
+                {/* Sentinel для подгрузки предыдущих сообщений */}
+                <div ref={messagesTopRef} style={{ height: 1 }} />
+
+                {isLoadingMore && (
+                    <div className="chat-room__loading-more">
+                        <span>Загрузка...</span>
+                    </div>
+                )}
+
                 {conversationMessages.map((msg, idx) => {
                     const isUser = msg.sender_kind === 'user';
 
@@ -254,7 +315,7 @@ export const ChatRoom: React.FC<Props> = ({ conversationId, onNavigate }) => {
                             )}
                             {msg.type === 'system' ? (
                                 <div className="chat-system-message">
-                                    <span>{msg.body}</span>
+                                    <span>{renderSystemBody(msg)}</span>
                                 </div>
                             ) : (
                                 <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--agent'}`}>
